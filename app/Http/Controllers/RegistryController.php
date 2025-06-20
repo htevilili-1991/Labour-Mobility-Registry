@@ -8,7 +8,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
-use DateTime;
+use Illuminate\Support\Arr;
 
 class RegistryController extends Controller
 {
@@ -23,13 +23,11 @@ class RegistryController extends Controller
             $sort = $request->input('sort', 'id:asc');
             $search = $request->input('search', '');
             $filters = json_decode($request->input('filters', '[]'), true);
-            $dateFrom = $request->input('date_from', null);
-            $dateTo = $request->input('date_to', null);
+            $years = Arr::wrap($request->input('years', [])); // Normalize to array
 
             Log::info('Registry index request', [
                 'search' => $search,
-                'date_from' => $dateFrom,
-                'date_to' => $dateTo,
+                'years' => $years,
                 'per_page' => $perPage,
                 'page' => $page,
                 'sort' => $sort,
@@ -54,22 +52,22 @@ class RegistryController extends Controller
                 });
             }
 
-            // Apply date range filter on both dob and travel_date
-            if ($dateFrom && $dateTo) {
-                $query->where(function ($q) use ($dateFrom, $dateTo) {
-                    $q->whereBetween('dob', [$dateFrom, $dateTo])
-                        ->orWhereBetween('travel_date', [$dateFrom, $dateTo]);
-                });
-            } elseif ($dateFrom) {
-                $query->where(function ($q) use ($dateFrom) {
-                    $q->where('dob', '>=', $dateFrom)
-                        ->orWhere('travel_date', '>=', $dateFrom);
-                });
-            } elseif ($dateTo) {
-                $query->where(function ($q) use ($dateTo) {
-                    $q->where('dob', '<=', $dateTo)
-                        ->orWhere('travel_date', '<=', $dateTo);
-                });
+            // Apply year filter on travel_date
+            if (!empty($years) && !in_array('all', $years)) {
+                try {
+                    $query->where(function ($q) use ($years) {
+                        foreach ($years as $year) {
+                            $q->orWhereRaw("RIGHT(COALESCE(travel_date, ''), 4) = ?", [$year]);
+                        }
+                    });
+                } catch (\Exception $e) {
+                    Log::error('Error applying year filter', [
+                        'years' => $years,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                    // Fallback: skip year filter to prevent breaking the query
+                }
             }
 
             // Apply column filters
@@ -99,6 +97,25 @@ class RegistryController extends Controller
 
             // Paginate results
             $registry = $query->paginate($perPage, ['*'], 'page', $page);
+
+            // Fetch distinct years for the dropdown
+            $distinctYears = [];
+            try {
+                $distinctYears = Registry::selectRaw("RIGHT(COALESCE(travel_date, ''), 4) as year")
+                    ->distinct()
+                    ->pluck('year')
+                    ->filter(fn($year) => !empty($year) && is_numeric($year)) // Remove empty or invalid years
+                    ->sort()
+                    ->values()
+                    ->map(fn($year) => (string) $year);
+            } catch (\Exception $e) {
+                Log::error('Error fetching distinct years', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                // Fallback: empty years list
+            }
+
             Log::info('Pagination details', [
                 'total' => $registry->total(),
                 'last_page' => $registry->lastPage(),
@@ -108,6 +125,7 @@ class RegistryController extends Controller
                 'from' => $registry->firstItem(),
                 'response_status' => http_response_code(),
                 'data_count' => count($registry->items()),
+                'distinct_years' => $distinctYears,
             ]);
 
             return Inertia::render('registry/index', [
@@ -121,14 +139,19 @@ class RegistryController extends Controller
                         'total' => $registry->total(),
                     ],
                 ],
+                'distinctYears' => $distinctYears,
                 'auth' => [
                     'user' => auth()->user() ? auth()->user()->only(['id', 'name', 'email', 'avatar']) : null,
                 ],
             ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching registry data: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            Log::error('Error fetching registry data', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all(),
+            ]);
             return Inertia::render('Error', [
-                'message' => 'Unable to load registry data.',
+                'message' => 'Unable to load registry data. Check logs for details.',
             ]);
         }
     }
@@ -142,13 +165,11 @@ class RegistryController extends Controller
             $sort = $request->input('sort', 'id:asc');
             $search = $request->input('search', '');
             $filters = json_decode($request->input('filters', '[]'), true);
-            $dateFrom = $request->input('date_from', null);
-            $dateTo = $request->input('date_to', null);
+            $years = Arr::wrap($request->input('years', [])); // Normalize to array
 
             Log::info('Export request', [
                 'search' => $search,
-                'date_from' => $dateFrom,
-                'date_to' => $dateTo,
+                'years' => $years,
                 'sort' => $sort,
                 'filters' => $filters,
             ]);
@@ -170,13 +191,22 @@ class RegistryController extends Controller
                 });
             }
 
-            // Apply date range filter
-            if ($dateFrom && $dateTo) {
-                $query->whereBetween('travel_date', [$dateFrom, $dateTo]);
-            } elseif ($dateFrom) {
-                $query->where('travel_date', '>=', $dateFrom);
-            } elseif ($dateTo) {
-                $query->where('travel_date', '<=', $dateTo);
+            // Apply year filter
+            if (!empty($years) && !in_array('all', $years)) {
+                try {
+                    $query->where(function ($q) use ($years) {
+                        foreach ($years as $year) {
+                            $q->orWhereRaw("RIGHT(COALESCE(travel_date, ''), 4) = ?", [$year]);
+                        }
+                    });
+                } catch (\Exception $e) {
+                    Log::error('Error applying year filter in export', [
+                        'years' => $years,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                    // Fallback: skip year filter
+                }
             }
 
             // Apply column filters
@@ -214,7 +244,11 @@ class RegistryController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            Log::error('Error exporting registry data: ' . $e->getMessage());
+            Log::error('Error exporting registry data', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all(),
+            ]);
             return response()->json([
                 'error' => 'Unable to export registry data.',
             ], 500);
@@ -258,7 +292,7 @@ class RegistryController extends Controller
                 'dob' => 'required|string|regex:/^\d{2}-\d{2}-\d{2}$/', // Validate MM-DD-YY
                 'age' => 'required|integer|min:0',
                 'sex' => 'required|string|max:50',
-                'travel_date' => 'required|string|regex:/^\d{2}-\d{2}-\d{2}$/', // Validate MM-DD-YY
+                'travel_date' => 'required|string|regex:/^\d{1,2}\/\d{1,2}\/\d{4}$/', // Validate D/M/YYYY or DD/MM/YYYY
                 'direction' => 'required|string|max:255',
                 'accommodation_address' => 'required|string|max:255',
                 'note' => 'nullable|string|max:1000',
@@ -339,7 +373,7 @@ class RegistryController extends Controller
                 'dob' => 'required|string|regex:/^\d{2}-\d{2}-\d{2}$/', // Validate MM-DD-YY
                 'age' => 'required|integer|min:0',
                 'sex' => 'required|string|max:50',
-                'travel_date' => 'required|string|regex:/^\d{2}-\d{2}-\d{2}$/', // Validate MM-DD-YY
+                'travel_date' => 'required|string|regex:/^\d{1,2}\/\d{1,2}\/\d{4}$/', // Validate D/M/YYYY or DD/MM/YYYY
                 'direction' => 'required|string|max:255',
                 'accommodation_address' => 'required|string|max:255',
                 'note' => 'nullable|string|max:1000',
@@ -437,7 +471,7 @@ class RegistryController extends Controller
                     continue;
                 }
 
-                // Skip if national_id_number or document_no already exists (only check non-null national_id_number)
+                // Skip if national_id_number or document_no already exists
                 $existsCondition = Registry::where('document_no', $row[6] ?? '');
                 if ($nationalIdNumber !== null) {
                     $existsCondition->orWhere('national_id_number', $nationalIdNumber);
@@ -457,10 +491,10 @@ class RegistryController extends Controller
                         'national_id_number' => $nationalIdNumber,
                         'document_type' => $row[5] ?? '',
                         'document_no' => $row[6] ?? '',
-                        'dob' => $row[7] ?? '', // Handled by model mutator
+                        'dob' => $row[7] ?? '',
                         'age' => (int)($row[8] ?? 0),
                         'sex' => $row[9] ?? '',
-                        'travel_date' => $row[10] ?? '', // Handled by model mutator
+                        'travel_date' => $row[10] ?? '',
                         'direction' => $row[11] ?? '',
                         'accommodation_address' => $row[12] ?? '',
                         'note' => !empty($row[13]) ? $row[13] : null,

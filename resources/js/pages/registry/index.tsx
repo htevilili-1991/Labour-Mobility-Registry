@@ -52,6 +52,7 @@ interface Props {
             total: number;
         };
     };
+    distinctYears: string[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -59,15 +60,13 @@ const breadcrumbs: BreadcrumbItem[] = [
     { label: 'Registry', href: '/registry' },
 ];
 
-export default function Registry({ auth, registry }: Props) {
+export default function Registry({ auth, registry, distinctYears }: Props) {
     const { url } = usePage();
     const searchParams = new URLSearchParams(url.split('?')[1] || '');
     const initialSearch = searchParams.get('search') || '';
-    const initialDateFrom = searchParams.get('date_from') || '';
-    const initialDateTo = searchParams.get('date_to') || '';
+    const initialYears = searchParams.get('years') ? searchParams.get('years')!.split(',') : ['all'];
     const [globalFilter, setGlobalFilter] = useState(initialSearch);
-    const [dateFrom, setDateFrom] = useState(initialDateFrom);
-    const [dateTo, setDateTo] = useState(initialDateTo);
+    const [selectedYears, setSelectedYears] = useState<string[]>(initialYears);
     const { flash } = usePage<{ flash?: { success?: string; error?: string } }>().props;
     const flashMessage = flash?.success || flash?.error;
     const [showAlert, setShowAlert] = useState(!!flashMessage);
@@ -87,17 +86,6 @@ export default function Registry({ auth, registry }: Props) {
             return () => clearTimeout(timer);
         }
     }, [flashMessage, exportError, navigationError]);
-
-    const formatDate = (dateStr: string | null): string => {
-        if (!dateStr) return 'N/A';
-        return dateStr.substring(0, 8);
-    };
-
-    const handleDateChange = (field: 'dateFrom' | 'dateTo', value: string) => {
-        const cleanedValue = value.replace(/[^0-9-]/g, '').substring(0, 8);
-        if (field === 'dateFrom') setDateFrom(cleanedValue);
-        else setDateTo(cleanedValue);
-    };
 
     const getCsrfToken = () => {
         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -121,7 +109,7 @@ export default function Registry({ auth, registry }: Props) {
                 header: 'DoB',
                 accessorKey: 'dob',
                 enableSorting: true,
-                cell: ({ getValue }) => formatDate(getValue() as string),
+                cell: ({ getValue }) => (getValue() as string) || 'N/A',
             },
             { header: 'Sex', accessorKey: 'sex', enableSorting: true },
             { header: 'Age', accessorKey: 'age', enableSorting: true },
@@ -129,7 +117,7 @@ export default function Registry({ auth, registry }: Props) {
                 header: 'Travel Date',
                 accessorKey: 'travel_date',
                 enableSorting: true,
-                cell: ({ getValue }) => formatDate(getValue() as string),
+                cell: ({ getValue }) => (getValue() as string) || 'N/A',
             },
             { header: 'Direction', accessorKey: 'direction', enableSorting: true },
             { header: 'Accommodation Address', accessorKey: 'accommodation_address', enableSorting: true },
@@ -217,9 +205,10 @@ export default function Registry({ auth, registry }: Props) {
                 per_page: table.getState().pagination.pageSize.toString(),
                 sort: sortParams,
                 search: globalFilter,
-                ...(dateFrom && { date_from: dateFrom }),
-                ...(dateTo && { date_to: dateTo }),
             });
+            if (selectedYears.length && !selectedYears.includes('all')) {
+                selectedYears.forEach((year) => queryParams.append('years[]', year));
+            }
             console.log('Sorting navigation:', `/registry?${queryParams.toString()}`);
             setIsLoading(true);
             router.visit(`/registry?${queryParams.toString()}`, {
@@ -261,9 +250,10 @@ export default function Registry({ auth, registry }: Props) {
                 per_page: newPageSize.toString(),
                 sort: sortParams,
                 search: globalFilter,
-                ...(dateFrom && { date_from: dateFrom }),
-                ...(dateTo && { date_to: dateTo }),
             });
+            if (selectedYears.length && !selectedYears.includes('all')) {
+                selectedYears.forEach((year) => queryParams.append('years[]', year));
+            }
             console.log('Navigating to:', `/registry?${queryParams.toString()}`, 'New page:', targetPage, 'New pageSize:', newPageSize);
             setIsLoading(true);
             router.visit(`/registry?${queryParams.toString()}`, {
@@ -288,7 +278,7 @@ export default function Registry({ auth, registry }: Props) {
     });
 
     const handleSearchSubmit = useCallback(
-        debounce((searchQuery: string) => {
+        debounce((searchQuery: string, years: string[]) => {
             const csrfToken = getCsrfToken();
             if (!csrfToken) return;
             const sortParams = table.getState().sorting[0]
@@ -299,10 +289,11 @@ export default function Registry({ auth, registry }: Props) {
                 per_page: table.getState().pagination.pageSize.toString(),
                 sort: sortParams,
                 search: searchQuery,
-                ...(dateFrom && { date_from: dateFrom }),
-                ...(dateTo && { date_to: dateTo }),
             });
-            console.log('Search navigation:', `/registry?${queryParams.toString()}`, 'Search query:', searchQuery);
+            if (years.length && !years.includes('all')) {
+                years.forEach((year) => queryParams.append('years[]', year));
+            }
+            console.log('Search navigation:', `/registry?${queryParams.toString()}`, 'Search query:', searchQuery, 'Years:', years);
             setIsLoading(true);
             router.visit(`/registry?${queryParams.toString()}`, {
                 preserveState: true,
@@ -320,12 +311,12 @@ export default function Registry({ auth, registry }: Props) {
                 },
             });
         }, 300),
-        [table, dateFrom, dateTo]
+        [table]
     );
 
     useEffect(() => {
-        handleSearchSubmit(globalFilter);
-    }, [globalFilter, dateFrom, dateTo, handleSearchSubmit]);
+        handleSearchSubmit(globalFilter, selectedYears);
+    }, [globalFilter, selectedYears, handleSearchSubmit]);
 
     // Sync table state with server props
     useEffect(() => {
@@ -339,11 +330,11 @@ export default function Registry({ auth, registry }: Props) {
         try {
             const csrfToken = getCsrfToken();
             if (!csrfToken) return;
-            const queryParams = new URLSearchParams({
-                search: globalFilter,
-                ...(dateFrom && { date_from: dateFrom }),
-                ...(dateTo && { date_to: dateTo }),
-            });
+            const queryParams = new URLSearchParams();
+            if (globalFilter) queryParams.set('search', globalFilter);
+            if (selectedYears.length && !selectedYears.includes('all')) {
+                selectedYears.forEach((year) => queryParams.append('years[]', year));
+            }
             setIsLoading(true);
             const url = `/registry/export?${queryParams.toString()}`;
             const response = await fetch(url, {
@@ -397,10 +388,17 @@ export default function Registry({ auth, registry }: Props) {
         }
     };
 
-    const clearDateFilters = () => {
-        setDateFrom('');
-        setDateTo('');
-        handleSearchSubmit(globalFilter);
+    const handleYearChange = (year: string) => {
+        setSelectedYears((prev) => {
+            if (year === 'all') {
+                return ['all'];
+            }
+            const newYears = prev.includes('all') ? [] : [...prev];
+            if (newYears.includes(year)) {
+                return newYears.filter((y) => y !== year);
+            }
+            return [...newYears, year].filter((y) => y !== 'all');
+        });
     };
 
     return (
@@ -448,31 +446,34 @@ export default function Registry({ auth, registry }: Props) {
                             placeholder="Search registry..."
                             className="w-full max-w-md rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 text-sm"
                         />
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                                <Input
-                                    type="text"
-                                    value={dateFrom}
-                                    onChange={(e) => handleDateChange('dateFrom', e.target.value)}
-                                    placeholder="Date From (MM-DD-YY)"
-                                    className="w-50 text-sm"
-                                />
-                                <Input
-                                    type="text"
-                                    value={dateTo}
-                                    onChange={(e) => handleDateChange('dateTo', e.target.value)}
-                                    placeholder="Date To (MM-DD-YY)"
-                                    className="w-50 text-sm"
-                                />
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
                                 <Button
                                     variant="outline"
-                                    onClick={clearDateFilters}
-                                    className="text-sm"
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                                 >
-                                    Clear Dates
+                                    {selectedYears.includes('all') ? 'All Years' : selectedYears.join(', ') || 'Select Years'}
+                                    <ChevronDownIcon className="ml-2 h-4 w-4" />
                                 </Button>
-                            </div>
-                        </div>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                                <DropdownMenuCheckboxItem
+                                    checked={selectedYears.includes('all')}
+                                    onCheckedChange={() => handleYearChange('all')}
+                                >
+                                    All
+                                </DropdownMenuCheckboxItem>
+                                {distinctYears.map((year) => (
+                                    <DropdownMenuCheckboxItem
+                                        key={year}
+                                        checked={selectedYears.includes(year)}
+                                        onCheckedChange={() => handleYearChange(year)}
+                                    >
+                                        {year}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                     <div className="flex items-center gap-2">
                         <DropdownMenu>
