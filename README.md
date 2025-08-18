@@ -259,8 +259,20 @@ Contributions must adhere to **PSR-12** for **Laravel** (PHP) and **ESLint** wit
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
 ## **Screenshots**
+Login Screen
 <img width="1787" height="895" alt="image" src="https://github.com/user-attachments/assets/15d686ca-c513-4ca4-b24b-2d9b58b7b52b" />
 
+Dashboard
+<img width="1870" height="955" alt="Screenshot From 2025-08-18 11-03-48" src="https://github.com/user-attachments/assets/296a19cc-898f-41bb-b9b9-ba645250516a" />
+
+View/edit/delete Registry Data
+<img width="1870" height="955" alt="Screenshot From 2025-08-18 11-11-06" src="https://github.com/user-attachments/assets/d88a5796-3cad-4eb3-92bb-406fc5f918db" />
+
+Upload/update Registry Data
+<img width="1874" height="910" alt="Screenshot From 2025-08-18 11-12-54" src="https://github.com/user-attachments/assets/3ca7ceab-6d89-4211-941a-88098f6fa5b2" />
+
+User Management
+<img width="1870" height="955" alt="Screenshot From 2025-08-18 11-14-51" src="https://github.com/user-attachments/assets/a7efe7df-a2c1-4672-8484-1ec1ba5c3cd6" />
 
 
 ## **Contact**
