@@ -258,6 +258,11 @@ Contributions must adhere to **PSR-12** for **Laravel** (PHP) and **ESLint** wit
 ## **License**
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
+## **Screenshots**
+<img width="1787" height="895" alt="image" src="https://github.com/user-attachments/assets/15d686ca-c513-4ca4-b24b-2d9b58b7b52b" />
+
+
+
 ## **Contact**
 For support or inquiries, contact the **Vanuatu Labour Registry** development team:
 - **Email**: htevilili@vanuatu.gov.vu
