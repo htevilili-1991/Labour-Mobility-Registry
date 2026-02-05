@@ -56,8 +56,7 @@ class DashboardController extends Controller
                 ->get()
                 ->mapWithKeys(function ($item) {
                     return [$item->travel_reason => $item->count];
-                })
-                ->toArray();
+                });
 
             // Records by sex
             $sexRecords = Registry::select(
