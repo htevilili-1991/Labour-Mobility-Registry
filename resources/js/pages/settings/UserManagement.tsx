@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Head, usePage, useForm } from '@inertiajs/react';
+import { Head, usePage, useForm, Link } from '@inertiajs/react';
 import HeadingSmall from '@/components/heading-small';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import AppLayout from '@/layouts/app-layout';
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -119,7 +120,7 @@ export default function UserManagement() {
                         </Alert>
                     )}
                     <div className="flex justify-between items-center">
-                        <HeadingSmall title="User Management" description="Manage users and their roles" />
+                        <HeadingSmall title="User Management" description="Manage users and their basic roles" />
                         <Dialog open={open} onOpenChange={setOpen}>
                             <DialogTrigger asChild>
                                 <Button>Add User</Button>
@@ -192,6 +193,22 @@ export default function UserManagement() {
                             </DialogContent>
                         </Dialog>
                     </div>
+
+                    <Card className="mb-6">
+                        <CardHeader>
+                            <CardTitle>Advanced Role Management</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-gray-600 mb-4">
+                                For advanced role and permission management, visit the dedicated Roles & Permissions section.
+                            </p>
+                            <Link href="/settings/roles-permissions">
+                                <Button>
+                                    Go to Roles & Permissions
+                                </Button>
+                            </Link>
+                        </CardContent>
+                    </Card>
                     {users && users.length > 0 ? (
                         <div className="overflow-x-auto max-w-full">
                             <table className="min-w-full bg-white border border-gray-200">

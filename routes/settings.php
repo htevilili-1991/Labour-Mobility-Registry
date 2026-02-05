@@ -18,5 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/settings/users', [ProfileController::class, 'storeUser'])->name('settings.users.store');
         Route::patch('/settings/users/{user}', [ProfileController::class, 'updateUser'])->name('settings.users.update');
         Route::delete('/settings/users/{user}', [ProfileController::class, 'destroyUser'])->name('settings.users.destroy');
+        
+        Route::get('/settings/roles-permissions', [ProfileController::class, 'showRolesPermissions'])->name('settings.roles-permissions');
     });
 });

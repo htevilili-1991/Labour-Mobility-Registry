@@ -177,4 +177,12 @@ class ProfileController extends Controller
 
         return redirect()->route('settings.users')->with('success', 'User deleted.');
     }
+
+    /**
+     * Show the roles and permissions management page (admin-only).
+     */
+    public function showRolesPermissions(): Response
+    {
+        return Inertia::render('Settings/RolesPermissions');
+    }
 }

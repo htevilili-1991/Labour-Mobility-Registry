@@ -39,6 +39,11 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                     href: '/settings/users',
                     icon: null,
                 },
+                {
+                    title: 'Roles & Permissions',
+                    href: '/settings/roles-permissions',
+                    icon: null,
+                },
             ]
             : []),
     ];
