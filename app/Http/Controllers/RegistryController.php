@@ -427,7 +427,6 @@ class RegistryController extends Controller
             Log::error('Error rendering CSV upload form: ' . $e->getMessage());
             return Inertia::render('Error', [
                 'message' => 'Unable to load the CSV upload form.',
-            ]);
         }
     }
 

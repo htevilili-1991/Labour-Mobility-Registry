@@ -24,7 +24,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('registry')->group(function () {
         // Explicit upload routes
         Route::get('upload', [RegistryController::class, 'upload'])->name('registry.upload');
+        Route::get('upload-wizard', [RegistryController::class, 'uploadWizard'])->name('registry.upload-wizard');
         Route::post('upload', [RegistryController::class, 'storeCsv'])->name('registry.storeCsv');
+        Route::post('store-wizard', [RegistryController::class, 'storeWizard'])->name('registry.storeWizard');
 
         // Resource routes with constraints
         Route::resource('/', RegistryController::class)
