@@ -52,14 +52,10 @@ class DashboardController extends Controller
                 DB::raw('COUNT(*) as count')
             )
                 ->whereNotNull('travel_reason')
-                ->groupBy('travel_reason')
-                ->orderByDesc('count')
+                ->orderBy('travel_reason', 'asc')
                 ->get()
-                ->map(function ($item) {
-                    return [
-                        'name' => $item->travel_reason ?? 'Unknown',
-                        'y' => (int) $item->count,
-                    ];
+                ->mapWithKeys(function ($item) {
+                    return [$item->travel_reason => $item->count];
                 })
                 ->toArray();
 
