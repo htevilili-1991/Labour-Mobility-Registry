@@ -15,12 +15,42 @@ The **Vanuatu Labour Registry** is a sophisticated, full-stack web application e
 - [Contact](#contact)
 
 ## **Features**
+
+### Core Registry Management
 - **Real-Time Global Search**: Implements a reactive, client-side filtering mechanism using **`@tanstack/react-table`**, enabling instant querying across 8 displayed columns (`surname`, `given_name`, `dob`, `sex`, `travel_date`, `direction`, `travel_reason`, `destination_coming_from`).
 - **Dynamic Data Grid**: A sortable, interactive table with row-level navigation to detailed views, powered by **React JS** and **TypeScript** for type-safe data rendering.
 - **Comprehensive Record Management**: Facilitates CRUD operations with a form-driven interface for editing all 16 registry fields, featuring reactive state management and conditional UI updates via **Inertia.js**.
 - **Responsive UI**: Crafted with **Tailwind CSS** for a pixel-perfect, mobile-optimized design adhering to modern UX principles.
-- **Secure Authentication**: Integrates **Laravel**’s authentication middleware with session-based security and CSRF protection for robust access control.
+- **Secure Authentication**: Integrates **Laravel**'s authentication middleware with session-based security and CSRF protection for robust access control.
 - **Error Resilience**: Employs comprehensive error handling with custom error pages and **Laravel** logging for diagnostics, ensuring operational stability.
+
+### Advanced Data Upload & Validation
+- **Wizard-Style CSV Upload**: Multi-step guided flow with 4 stages (Select File → Validate Data → Map Fields → Create Batch) featuring progress indicators and step navigation.
+- **Auto-Save Progress**: Wizard progress automatically saved to localStorage and restored on page reload, preventing data loss during multi-step processes.
+- **Drag-and-Drop Interface**: Intuitive CSV file upload with visual drag zone and hover states for enhanced user experience.
+- **Real-Time Data Validation**: Comprehensive field validation including passport format regex, age calculation from DOB, logical date checks, and duplicate detection within CSV files.
+- **Smart Error Reporting**: Detailed inline error messages with row numbers, specific field issues, and suggested fixes for data quality assurance.
+- **Intelligent Defaults**: Auto-filled batch dates (current month), smart batch name suggestions, and pre-populated form fields to reduce manual data entry.
+
+### Batch Management System
+- **Multi-Select Operations**: Checkbox-based selection system with "Select All" functionality for bulk registry entry management.
+- **Bulk Actions**: Add multiple registry entries to draft batches in a single operation with visual selection indicators and action toolbar.
+- **Batch Workflow Management**: Complete batch lifecycle management (draft → submitted → under_review → approved/rejected) with role-based permissions.
+- **Email Notifications**: Automatic email notifications to verification staff upon batch submission with detailed batch information and direct links.
+- **Batch Analytics**: Real-time record counting, batch filtering by scheme/type/status, and comprehensive batch tracking.
+
+### User Experience & Accessibility
+- **Dark/Light Theme System**: Complete theming support with light, dark, and system preference modes using custom appearance management.
+- **Responsive Design**: Mobile-optimized interface with adaptive layouts and touch-friendly controls.
+- **Progress Indicators**: Visual feedback for all async operations including uploads, validations, and batch processing.
+- **Keyboard Navigation**: Full keyboard accessibility support for power users and accessibility compliance.
+
+### Administrative & Verification Features
+- **Role-Based Access Control**: Granular permission system with role management for different user types (VBoS, Labour Department, Admin).
+- **Verification Workflow**: Dedicated verification interface for Labour Department staff with audit trails and approval/rejection capabilities.
+- **Audit System**: Comprehensive audit logging for all registry changes with user tracking and timestamps.
+- **Reports Dashboard**: Advanced analytics and reporting module with verification, compliance, and performance reports.
+- **Real-Time Analytics**: Live data visualization and statistics for monitoring registry operations and trends.
 
 ## **Technology Stack**
 - **Backend Framework**: **Laravel** 11, a PHP framework with Eloquent ORM for seamless database interactions and RESTful API routing.
@@ -148,19 +178,61 @@ The **Vanuatu Labour Registry** is a sophisticated, full-stack web application e
    - Register or log in to access the dashboard and registry.
 
 ## **Usage**
+
+### Registry Data Management
 1. **Query Registry Data**
    - Access `/registry` via the **AppSidebar.tsx** navigation ("View Data").
    - Utilize the instant search input, powered by **`@tanstack/react-table`**, to filter records (e.g., `Doe`, `2025-05`).
    - Sort columns by clicking headers (e.g., `Surname`) for dynamic data ordering.
    - Click rows to navigate to `/registry/{id}` for detailed views.
 
-2. **Manage Records**
+2. **Manage Individual Records**
    - On `/registry/{id}`, edit all 16 fields using a **React JS** form with **Inertia.js** form handling.
    - Changes trigger a reactive `Update` button, leveraging **TypeScript** for type-safe state management.
-   - Submit updates via **Inertia.js** `PUT` requests to **Laravel**’s `RegistryController`.
+   - Submit updates via **Inertia.js** `PUT` requests to **Laravel**'s `RegistryController`.
    - Use the `Back` button to return to `/registry`.
 
-3. **Diagnostics**
+### CSV Data Upload & Batch Processing
+3. **Upload CSV Data via Wizard**
+   - Navigate to `/registry/upload-wizard` to access the guided upload flow.
+   - **Step 1**: Select CSV file using drag-and-drop or file picker.
+   - **Step 2**: Review real-time validation results with detailed error reporting.
+   - **Step 3**: Map CSV columns to registry fields (auto-mapped when possible).
+   - **Step 4**: Create or select a batch with auto-filled dates and smart naming.
+   - Progress is automatically saved and restored if you navigate away.
+
+4. **Batch Management**
+   - View all batches at `/batches` with filtering by scheme, type, and status.
+   - Create new batches at `/batches/create` with intelligent defaults.
+   - Use multi-select checkboxes on `/registry` to bulk-add entries to existing batches.
+   - Submit batches for verification with automatic email notifications to staff.
+   - Track batch progress through draft → submitted → under_review → approved/rejected stages.
+
+### Verification & Administration
+5. **Verification Workflow (Labour Department)**
+   - Access verification dashboard at `/verification/dashboard`.
+   - Review submitted batches with detailed registry entry validation.
+   - Approve or reject batches with audit trail logging.
+   - View batch audit history at `/verification/{batch}/audit`.
+
+6. **Administrative Functions**
+   - Manage user roles and permissions via `/admin/roles` and `/admin/permissions`.
+   - Generate reports at `/reports` including verification, compliance, and performance analytics.
+   - View audit logs at `/audits` for complete system activity tracking.
+   - Monitor real-time analytics and statistics on the main dashboard.
+
+### User Interface Features
+7. **Theme & Appearance**
+   - Toggle between light, dark, and system themes using the appearance selector.
+   - Theme preference is automatically saved and restored across sessions.
+   - All interfaces are fully responsive and mobile-optimized.
+
+8. **Bulk Operations**
+   - Select multiple registry entries using checkboxes in the main registry table.
+   - Use "Select All" to select all visible entries.
+   - Perform bulk actions like adding entries to batches or exporting selected data.
+
+9. **Diagnostics**
    - **UI Issues**: If the app becomes unresponsive post-update, inspect the browser console (F12) and `storage/logs/laravel.log` for **Laravel** or **React JS** errors.
    - **Database Errors**: Validate **MySQL** migrations and `.env` configuration.
    - **Build Failures**: Clear caches and rebuild:
@@ -178,35 +250,83 @@ The **Vanuatu Labour Registry** is a sophisticated, full-stack web application e
 vanuatu-labour-registry/
 ├── app/
 │   ├── Http/
-│   │   └── Controllers/RegistryController.php
-│   └── Models/Registry.php
+│   │   ├── Controllers/
+│   │   │   ├── RegistryController.php
+│   │   │   ├── RegistryBatchController.php
+│   │   │   ├── DashboardController.php
+│   │   │   ├── VerificationController.php
+│   │   │   ├── ReportsController.php
+│   │   │   └── AuditController.php
+│   │   └── Middleware/
+│   │       └── HandleAppearance.php
+│   └── Models/
+│       ├── Registry.php
+│       └── RegistryBatch.php
 ├── resources/
 │   ├── js/
-│   │   ├── Components/AppSidebar.tsx
-│   │   ├── layouts/app-layout.tsx
+│   │   ├── Components/
+│   │   │   ├── AppSidebar.tsx
+│   │   │   ├── app-content.tsx
+│   │   │   └── appearance-tabs.tsx
+│   │   ├── hooks/
+│   │   │   └── use-appearance.tsx
+│   │   ├── layouts/
+│   │   │   ├── app-layout.tsx
+│   │   │   ├── auth/
+│   │   │   │   ├── auth-card-layout.tsx
+│   │   │   │   └── auth-split-layout.tsx
+│   │   │   └── ...
 │   │   ├── pages/
 │   │   │   ├── registry/
 │   │   │   │   ├── index.tsx
-│   │   │   │   └── show.tsx
+│   │   │   │   ├── show.tsx
+│   │   │   │   ├── upload.tsx
+│   │   │   │   └── upload-wizard.tsx
+│   │   │   ├── batches/
+│   │   │   │   ├── index.tsx
+│   │   │   │   ├── show.tsx
+│   │   │   │   └── create.tsx
+│   │   │   ├── dashboard.tsx
+│   │   │   ├── auth/
+│   │   │   │   └── login.tsx
 │   │   │   └── Error.tsx
 │   │   ├── types/index.ts
 │   │   └── app.tsx
 │   ├── css/app.css
 │   └── views/app.blade.php
-├── routes/web.php
+├── routes/
+│   ├── web.php
+│   ├── auth.php
+│   └── settings.php
 ├── database/
 │   └── migrations/
 ├── .env.example
 ├── composer.json
 ├── package.json
 ├── vite.config.ts
-└── README.md
+├── README.md
+└── FEATURE_IMPLEMENTATION_STATUS.md
 ```
 
-- `RegistryController.php`: Orchestrates CRUD operations with **Laravel**’s Eloquent ORM and **Inertia.js** responses.
-- `index.tsx`: Renders a reactive, sortable table with instant search using **React JS** and **`@tanstack/react-table`**.
-- `show.tsx`: Provides a type-safe form for editing 16 fields, integrated with **Inertia.js** for seamless server communication.
-- `AppSidebar.tsx`: Implements navigation with **React JS** components and **Inertia.js** routing.
+**Key Components:**
+
+**Backend Controllers:**
+- `RegistryController.php`: Handles CRUD operations, CSV upload wizard, and validation logic.
+- `RegistryBatchController.php`: Manages batch lifecycle, email notifications, and bulk operations.
+- `VerificationController.php`: Oversees verification workflow for Labour Department staff.
+- `ReportsController.php`: Generates analytics and compliance reports.
+- `DashboardController.php`: Provides real-time statistics and dashboard data.
+
+**Frontend Pages:**
+- `upload-wizard.tsx`: Multi-step CSV upload with auto-save, drag-drop, and real-time validation.
+- `index.tsx` (registry): Enhanced table with multi-select checkboxes and bulk actions.
+- `batches/`: Complete batch management interface with filtering and workflow tracking.
+- `dashboard.tsx`: Real-time analytics and statistics visualization.
+
+**UI Components:**
+- `appearance-tabs.tsx`: Theme switching interface (light/dark/system).
+- `use-appearance.tsx`: Custom hook for theme state management.
+- Enhanced layouts with responsive design and accessibility features.
 
 ## **Database Schema**
 The `registry` table comprises 16 columns, managed via **Laravel** migrations:
@@ -259,20 +379,68 @@ Contributions must adhere to **PSR-12** for **Laravel** (PHP) and **ESLint** wit
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
 ## **Screenshots**
-Login Screen
-<img width="1787" height="895" alt="image" src="https://github.com/user-attachments/assets/15d686ca-c513-4ca4-b24b-2d9b58b7b52b" />
 
-Dashboard
-<img width="1870" height="955" alt="Screenshot From 2025-08-18 11-03-48" src="https://github.com/user-attachments/assets/296a19cc-898f-41bb-b9b9-ba645250516a" />
+### Core Interface
+**Login Screen**
+<!-- Add login screenshot here -->
+<img width="1787" height="895" alt="Login Screen" src="https://github.com/user-attachments/assets/15d686ca-c513-4ca4-b24b-2d9b58b7b52b" />
 
-View/edit/delete Registry Data
-<img width="1870" height="955" alt="Screenshot From 2025-08-18 11-11-06" src="https://github.com/user-attachments/assets/d88a5796-3cad-4eb3-92bb-406fc5f918db" />
+**Dashboard with Real-Time Analytics**
+<!-- Add dashboard screenshot here -->
+<img width="1870" height="955" alt="Dashboard" src="https://github.com/user-attachments/assets/296a19cc-898f-41bb-b9b9-ba645250516a" />
 
-Upload/update Registry Data
-<img width="1874" height="910" alt="Screenshot From 2025-08-18 11-12-54" src="https://github.com/user-attachments/assets/3ca7ceab-6d89-4211-941a-88098f6fa5b2" />
+### Registry Management
+**Registry Data Table with Multi-Select**
+<!-- Add registry table with checkboxes screenshot here -->
+<img width="1870" height="955" alt="Registry Data Table" src="https://github.com/user-attachments/assets/d88a5796-3cad-4eb3-92bb-406fc5f918db" />
 
-User Management
-<img width="1870" height="955" alt="Screenshot From 2025-08-18 11-14-51" src="https://github.com/user-attachments/assets/a7efe7df-a2c1-4672-8484-1ec1ba5c3cd6" />
+**Individual Record Edit Form**
+<!-- Add record edit screenshot here -->
+<img width="1874" height="910" alt="Edit Record" src="https://github.com/user-attachments/assets/3ca7ceab-6d89-4211-941a-88098f6fa5b2" />
+
+### CSV Upload Wizard
+**Step 1: File Selection with Drag-and-Drop**
+<!-- Add CSV upload step 1 screenshot here -->
+
+**Step 2: Real-Time Validation Results**
+<!-- Add CSV validation screenshot here -->
+
+**Step 3: Field Mapping Interface**
+<!-- Add field mapping screenshot here -->
+
+**Step 4: Batch Creation with Smart Defaults**
+<!-- Add batch creation screenshot here -->
+
+### Batch Management
+**Batch List with Filtering**
+<!-- Add batch list screenshot here -->
+
+**Batch Detail View with Registry Entries**
+<!-- Add batch detail screenshot here -->
+
+**Bulk Operations Interface**
+<!-- Add bulk operations screenshot here -->
+
+### Verification & Administration
+**Verification Dashboard**
+<!-- Add verification dashboard screenshot here -->
+
+**User Management Interface**
+<!-- Add user management screenshot here -->
+<img width="1870" height="955" alt="User Management" src="https://github.com/user-attachments/assets/a7efe7df-a2c1-4672-8484-1ec1ba5c3cd6" />
+
+**Reports Analytics**
+<!-- Add reports screenshot here -->
+
+### Theme & Appearance
+**Light Theme Interface**
+<!-- Add light theme screenshot here -->
+
+**Dark Theme Interface**
+<!-- Add dark theme screenshot here -->
+
+**Theme Toggle Component**
+<!-- Add theme toggle screenshot here -->
 
 
 ## **Contact**
