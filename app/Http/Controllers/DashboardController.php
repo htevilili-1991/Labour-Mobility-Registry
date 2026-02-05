@@ -29,15 +29,15 @@ class DashboardController extends Controller
 
             // Monthly records by travel_date (last 12 months)
             $monthlyRecordsTravel = Registry::select(
-                DB::raw("EXTRACT(YEAR FROM travel_date) as year"),
-                DB::raw("EXTRACT(MONTH FROM travel_date) as month"),
+                DB::raw("DATE_PART('year', travel_date) as year"),
+                DB::raw("DATE_PART('month', travel_date) as month"),
                 DB::raw('COUNT(*) as count')
             )
                 ->whereNotNull('travel_date')
                 ->whereRaw("travel_date ~ '^\d{2}/\d{2}/\d{4}$' AND 
-                         EXTRACT(MONTH FROM travel_date) BETWEEN 1 AND 12 AND
-                         EXTRACT(DAY FROM travel_date) BETWEEN 1 AND 31 AND
-                         EXTRACT(YEAR FROM travel_date) BETWEEN 20 AND 99")
+                         DATE_PART('month', travel_date) BETWEEN 1 AND 12 AND
+                         DATE_PART('day', travel_date) BETWEEN 1 AND 31 AND
+                         DATE_PART('year', travel_date) BETWEEN 20 AND 99")
                 ->groupBy(DB::raw("year, month"))
                 ->orderByRaw("year, month")
                 ->get()
