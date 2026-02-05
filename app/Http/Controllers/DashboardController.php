@@ -29,13 +29,23 @@ class DashboardController extends Controller
 
             // Monthly records by travel_date (last 12 months)
             $monthlyRecordsTravel = Registry::select(
-                DB::raw("TO_CHAR(TO_DATE(travel_date, 'DD/MM/YYYY'), 'YYYY-MM') as month"),
+                DB::raw("CASE 
+                    WHEN TO_CHAR(travel_date, 'DD/MM/YYYY') ~ '^\d{2}/\d{2}/\d{4}$' AND 
+                         SUBSTRING(TO_CHAR(travel_date, 'DD/MM/YYYY'), 1, 2) BETWEEN '01' AND '31' AND
+                         SUBSTRING(TO_CHAR(travel_date, 'DD/MM/YYYY'), 4, 5) BETWEEN '01' AND '12' AND
+                         SUBSTRING(TO_CHAR(travel_date, 'DD/MM/YYYY'), 7, 10) BETWEEN '20' AND '99' THEN
+                         'Invalid'
+                    ELSE TO_CHAR(TO_DATE(travel_date, 'DD/MM/YYYY'), 'YYYY-MM')
+                END as month"),
                 DB::raw('COUNT(*) as count')
             )
                 ->whereNotNull('travel_date')
-                ->whereRaw("TO_DATE(travel_date, 'DD/MM/YYYY') >= ?", [Carbon::now()->subMonths(12)->toDateString()])
-                ->groupBy(DB::raw("TO_CHAR(TO_DATE(travel_date, 'DD/MM/YYYY'), 'YYYY-MM')"))
-                ->orderByRaw("TO_CHAR(TO_DATE(travel_date, 'DD/MM/YYYY'), 'YYYY-MM') ASC")
+                ->whereRaw("TO_CHAR(travel_date, 'DD/MM/YYYY') ~ '^\d{2}/\d{2}/\d{4}$' AND 
+                         SUBSTRING(TO_CHAR(travel_date, 'DD/MM/YYYY'), 1, 2) BETWEEN '01' AND '31' AND
+                         SUBSTRING(TO_CHAR(travel_date, 'DD/MM/YYYY'), 4, 5) BETWEEN '01' AND '12' AND
+                         SUBSTRING(TO_CHAR(travel_date, 'DD/MM/YYYY'), 7, 10) BETWEEN '20' AND '99'")
+                ->groupBy(DB::raw("month"))
+                ->orderByRaw("month")
                 ->get()
                 ->mapWithKeys(function ($item) {
                     return [$item->month => (int) $item->count];
