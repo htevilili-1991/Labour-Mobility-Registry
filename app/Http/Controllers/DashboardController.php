@@ -29,15 +29,15 @@ class DashboardController extends Controller
 
             // Monthly records by travel_date (last 12 months)
             $monthlyRecordsTravel = Registry::select(
-                DB::raw("to_char(travel_date, 'YYYY') as year"),
-                DB::raw("to_char(travel_date, 'MM') as month"),
+                DB::raw("to_char(\"travel_date\", 'YYYY') as year"),
+                DB::raw("to_char(\"travel_date\", 'MM') as month"),
                 DB::raw('COUNT(*) as count')
             )
                 ->whereNotNull('travel_date')
                 ->whereRaw("travel_date ~ '^\d{2}/\d{2}/\d{4}$' AND 
-                         to_char(travel_date, 'MM') BETWEEN '01' AND '12' AND
-                         to_char(travel_date, 'DD') BETWEEN '01' AND '31' AND
-                         to_char(travel_date, 'YYYY') BETWEEN '20' AND '99'")
+                         to_char(\"travel_date\", 'MM') BETWEEN '01' AND '12' AND
+                         to_char(\"travel_date\", 'DD') BETWEEN '01' AND '31' AND
+                         to_char(\"travel_date\", 'YYYY') BETWEEN '20' AND '99'")
                 ->groupBy(DB::raw("year, month"))
                 ->orderBy(DB::raw("year, month"))
                 ->get()
