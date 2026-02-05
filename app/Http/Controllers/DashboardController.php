@@ -29,17 +29,17 @@ class DashboardController extends Controller
 
             // Monthly records by travel_date (last 12 months)
             $monthlyRecordsTravel = Registry::select(
-                DB::raw("to_char(\"travel_date\", 'YYYY') as year"),
-                DB::raw("to_char(\"travel_date\", 'MM') as month"),
+                DB::raw("EXTRACT(YEAR FROM travel_date) as year"),
+                DB::raw("EXTRACT(MONTH FROM travel_date) as month"),
                 DB::raw('COUNT(*) as count')
             )
                 ->whereNotNull('travel_date')
                 ->whereRaw("travel_date ~ '^\d{2}/\d{2}/\d{4}$' AND 
-                         to_char(\"travel_date\", 'MM') BETWEEN '01' AND '12' AND
-                         to_char(\"travel_date\", 'DD') BETWEEN '01' AND '31' AND
-                         to_char(\"travel_date\", 'YYYY') BETWEEN '20' AND '99'")
-                ->groupBy(DB::raw("year, month"))
-                ->orderBy(DB::raw("year, month"))
+                         EXTRACT(MONTH FROM travel_date) BETWEEN 1 AND 12 AND
+                         EXTRACT(DAY FROM travel_date) BETWEEN 1 AND 31 AND
+                         EXTRACT(YEAR FROM travel_date) BETWEEN 20 AND 99")
+                ->groupBy(DB::raw("EXTRACT(YEAR FROM travel_date), EXTRACT(MONTH FROM travel_date)"))
+                ->orderBy(DB::raw("EXTRACT(YEAR FROM travel_date), EXTRACT(MONTH FROM travel_date)"))
                 ->get()
                 ->mapWithKeys(function ($item) {
                     return [(int)$item->year . '-' . str_pad((int)$item->month, 2, '0', STR_PAD_LEFT) => (int) $item->count];
