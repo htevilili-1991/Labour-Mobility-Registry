@@ -67,13 +67,12 @@ class DashboardController extends Controller
                 ->groupBy('sex')
                 ->orderByDesc('count')
                 ->get()
-                ->map(function ($item) {
+                ->mapWithKeys(function ($item) {
                     return [
                         'name' => $item->sex ?? 'Unknown',
                         'y' => (int) $item->count,
                     ];
                 })
-                ->toArray();
 
             // Recent 5 records
             $recentRecords = Registry::select([
