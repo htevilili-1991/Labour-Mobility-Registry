@@ -345,7 +345,9 @@ export default function Dashboard({
                                                     : 'N/A'}
                                             </TableCell>
                                             <TableCell>
-                                                {format(new Date(record.created_at), 'MMM dd, yyyy HH:mm')}
+                                                {record.created_at
+                                                    ? format(new Date(record.created_at), 'MMM dd, yyyy HH:mm')
+                                                    : 'N/A'}
                                             </TableCell>
                                             <TableCell>
                                                 <Link href={`/registry/${record.id}`} className="text-blue-600 hover:underline">

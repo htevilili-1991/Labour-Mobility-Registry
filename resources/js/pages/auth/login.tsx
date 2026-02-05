@@ -85,7 +85,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             <button
                                 type="button"
                                 onClick={togglePasswordVisibility}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                 tabIndex={3}
                             >
                                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -105,14 +105,14 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                         <Label htmlFor="remember">Remember me</Label>
                     </div>
 
-                    <Button type="submit" className="mt-4 w-full" tabIndex={5} disabled={processing}>
+                    <Button type="submit" className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white" tabIndex={5} disabled={processing}>
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                         Log in
                     </Button>
                 </div>
             </form>
 
-            {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
+            {status && <div className="mb-4 text-center text-sm font-medium text-green-700 bg-green-50 px-4 py-2 rounded-md">{status}</div>}
         </AuthLayout>
     );
 }

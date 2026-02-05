@@ -20,7 +20,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Upload Data',
-        href: '/registry/upload',
+        href: '/registry/upload-wizard',
         icon: UploadIcon,
     },
     {

@@ -274,8 +274,8 @@ export default function BatchShow({ auth, batch, registryEntries }: Props) {
                                 <Link href="/registry">
                                     <Button variant="outline">Browse Registry</Button>
                                 </Link>
-                                <Link href="/registry/upload">
-                                    <Button variant="outline">Upload Registry Data</Button>
+                                <Link href="/registry/upload-wizard">
+                                    <Button variant="outline">Upload CSV via Wizard</Button>
                                 </Link>
                             </div>
                             <p className="text-sm text-gray-600 mt-2">

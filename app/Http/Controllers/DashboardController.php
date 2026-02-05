@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Registry;
-use Inertia\Inertia;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
@@ -31,7 +31,8 @@ class DashboardController extends Controller
             $monthlyRecordsTravel = Registry::whereNotNull('travel_date')
                 ->get()
                 ->groupBy(function ($item) {
-                    $date = \Carbon::parse($item->travel_date);
+                    $date = Carbon::parse($item->travel_date);
+
                     return $date->format('Y-m');
                 })
                 ->mapWithKeys(function ($group, $key) {
@@ -52,6 +53,7 @@ class DashboardController extends Controller
                 DB::raw('COUNT(*) as count')
             )
                 ->whereNotNull('travel_reason')
+                ->groupBy('travel_reason')
                 ->orderBy('travel_reason', 'asc')
                 ->get()
                 ->mapWithKeys(function ($item) {
@@ -77,7 +79,7 @@ class DashboardController extends Controller
 
             // Recent 5 records
             $recentRecords = Registry::select([
-                'id', 'surname', 'given_name', 'nationality', 'travel_date', 'created_at'
+                'id', 'surname', 'given_name', 'nationality', 'travel_date', 'created_at',
             ])
                 ->orderBy('created_at', 'desc')
                 ->take(5)
@@ -88,6 +90,8 @@ class DashboardController extends Controller
                         'surname' => $item->surname ?? 'N/A',
                         'given_name' => $item->given_name ?? 'N/A',
                         'nationality' => $item->nationality ?? 'N/A',
+                        'travel_date' => $item->travel_date?->format('Y-m-d'),
+                        'created_at' => $item->created_at?->toIso8601String(),
                     ];
                 })
                 ->toArray();
@@ -117,7 +121,8 @@ class DashboardController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching dashboard data: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            Log::error('Error fetching dashboard data: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
             return Inertia::render('Dashboard', [
                 'metrics' => [
                     'total_records' => 0,
@@ -128,7 +133,7 @@ class DashboardController extends Controller
                 'travel_reason_records' => [],
                 'sex_records' => [],
                 'recent_records' => [],
-                'error' => 'Unable to load dashboard data: ' . $e->getMessage(),
+                'error' => 'Unable to load dashboard data: '.$e->getMessage(),
                 'auth' => [
                     'user' => auth()->check() ? auth()->user()->only(['name', 'email']) : null,
                 ],

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Upload, Info } from 'lucide-react';
 
 interface Props {
     auth: { user: User | null };
@@ -20,12 +22,25 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function BatchCreate({ auth, schemes, batchTypes }: Props) {
+    // Pre-fill with current month/year
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    const formatDate = (date: Date): string => {
+        return date.toISOString().split('T')[0];
+    };
+
+    // Generate suggested batch name
+    const monthName = now.toLocaleString('default', { month: 'long' });
+    const suggestedName = `${monthName} ${now.getFullYear()} Batch`;
+
     const { data, setData, post, processing, errors } = useForm({
-        name: '',
+        name: suggestedName,
         batch_type: '',
         scheme: '',
-        period_start: '',
-        period_end: '',
+        period_start: formatDate(firstDayOfMonth),
+        period_end: formatDate(lastDayOfMonth),
         description: '',
     });
 
@@ -44,6 +59,18 @@ export default function BatchCreate({ auth, schemes, batchTypes }: Props) {
                         <Button variant="outline">Back to Batches</Button>
                     </Link>
                 </div>
+
+                {/* Suggestion for CSV upload */}
+                <Alert className="border-blue-200 bg-blue-50">
+                    <Info className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-800">
+                        <strong>Have CSV data to upload?</strong> Use the{' '}
+                        <Link href="/registry/upload-wizard" className="font-semibold underline hover:text-blue-900">
+                            Upload Wizard
+                        </Link>{' '}
+                        to create a batch and import CSV data in one step. This page is for creating an empty batch to add entries manually.
+                    </AlertDescription>
+                </Alert>
 
                 <Card>
                     <CardHeader>
@@ -137,10 +164,20 @@ export default function BatchCreate({ auth, schemes, batchTypes }: Props) {
                                     After creating this batch, you will be able to:
                                 </p>
                                 <ul className="text-blue-800 text-sm mt-2 list-disc list-inside space-y-1">
-                                    <li>Add registry entries to this batch</li>
+                                    <li>Add registry entries to this batch using bulk selection</li>
                                     <li>Edit batch details while in draft status</li>
                                     <li>Submit the batch for Labour Department verification</li>
                                 </ul>
+                                <div className="mt-4 pt-4 border-t border-blue-300">
+                                    <p className="text-blue-800 text-sm font-medium mb-2">Quick Tip:</p>
+                                    <p className="text-blue-700 text-sm">
+                                        You can select multiple entries from the{' '}
+                                        <Link href="/registry" className="font-semibold underline hover:text-blue-900">
+                                            Registry page
+                                        </Link>{' '}
+                                        and add them to this batch in bulk.
+                                    </p>
+                                </div>
                             </div>
 
                             <div className="flex gap-2">

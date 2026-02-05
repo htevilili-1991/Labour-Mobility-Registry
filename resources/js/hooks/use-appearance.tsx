@@ -20,9 +20,9 @@ const setCookie = (name: string, value: string, days = 365) => {
 };
 
 const applyTheme = (appearance: Appearance) => {
-    const isDark = appearance === 'dark' || (appearance === 'system' && prefersDark());
-
-    document.documentElement.classList.toggle('dark', isDark);
+    // Always use light theme
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
 };
 
 const mediaQuery = () => {
@@ -39,32 +39,33 @@ const handleSystemThemeChange = () => {
 };
 
 export function initializeTheme() {
-    const savedAppearance = (localStorage.getItem('appearance') as Appearance) || 'system';
+    // Always use light theme
+    applyTheme('light');
 
-    applyTheme(savedAppearance);
-
-    // Add the event listener for system theme changes...
-    mediaQuery()?.addEventListener('change', handleSystemThemeChange);
+    // Add the event listener for system theme changes (but always apply light)
+    mediaQuery()?.addEventListener('change', () => applyTheme('light'));
 }
 
 export function useAppearance() {
-    const [appearance, setAppearance] = useState<Appearance>('system');
+    const [appearance, setAppearance] = useState<Appearance>('light');
 
     const updateAppearance = useCallback((mode: Appearance) => {
-        setAppearance(mode);
+        // Force light mode - ignore dark/system preferences
+        const lightMode: Appearance = 'light';
+        setAppearance(lightMode);
 
         // Store in localStorage for client-side persistence...
-        localStorage.setItem('appearance', mode);
+        localStorage.setItem('appearance', lightMode);
 
         // Store in cookie for SSR...
-        setCookie('appearance', mode);
+        setCookie('appearance', lightMode);
 
-        applyTheme(mode);
+        applyTheme(lightMode);
     }, []);
 
     useEffect(() => {
-        const savedAppearance = localStorage.getItem('appearance') as Appearance | null;
-        updateAppearance(savedAppearance || 'system');
+        // Always use light mode
+        updateAppearance('light');
 
         return () => mediaQuery()?.removeEventListener('change', handleSystemThemeChange);
     }, [updateAppearance]);

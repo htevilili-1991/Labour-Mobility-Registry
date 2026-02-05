@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Registry;
 use App\Models\RegistryBatch;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\DB;
 
 class RegistryBatchController extends Controller
 {
@@ -46,7 +48,7 @@ class RegistryBatchController extends Controller
     {
         $schemes = ['RSE', 'SWP', 'PALM'];
         $batchTypes = ['inbound', 'outbound', 'earnings', 'returns'];
-        
+
         return Inertia::render('Batches/Create', [
             'schemes' => $schemes,
             'batchTypes' => $batchTypes,
@@ -82,7 +84,7 @@ class RegistryBatchController extends Controller
     public function show(RegistryBatch $batch)
     {
         $batch->load(['submittedBy', 'verifiedBy', 'approvedBy', 'registryEntries']);
-        
+
         return Inertia::render('Batches/Show', [
             'batch' => $batch,
             'registryEntries' => $batch->registryEntries,
@@ -91,13 +93,13 @@ class RegistryBatchController extends Controller
 
     public function edit(RegistryBatch $batch)
     {
-        if (!$batch->canBeEdited()) {
+        if (! $batch->canBeEdited()) {
             return back()->with('error', 'This batch cannot be edited.');
         }
 
         $schemes = ['RSE', 'SWP', 'PALM'];
         $batchTypes = ['inbound', 'outbound', 'earnings', 'returns'];
-        
+
         return Inertia::render('Batches/Edit', [
             'batch' => $batch,
             'schemes' => $schemes,
@@ -107,7 +109,7 @@ class RegistryBatchController extends Controller
 
     public function update(Request $request, RegistryBatch $batch)
     {
-        if (!$batch->canBeEdited()) {
+        if (! $batch->canBeEdited()) {
             return back()->with('error', 'This batch cannot be edited.');
         }
 
@@ -128,19 +130,51 @@ class RegistryBatchController extends Controller
 
     public function submit(RegistryBatch $batch)
     {
-        if (!$batch->canBeSubmitted()) {
+        if (! $batch->canBeSubmitted()) {
             return back()->with('error', 'This batch cannot be submitted.');
         }
 
         $batch->submit();
 
+        // Send email notification to verification staff
+        try {
+            $verificationStaff = User::whereHas('permissions', function ($query) {
+                $query->where('name', 'batches.verify');
+            })->orWhereHas('roles.permissions', function ($query) {
+                $query->where('name', 'batches.verify');
+            })->get();
+
+            foreach ($verificationStaff as $staff) {
+                try {
+                    Mail::raw(
+                        "A new batch '{$batch->name}' has been submitted for verification.\n\n".
+                        "Batch Details:\n".
+                        "- Scheme: {$batch->scheme}\n".
+                        "- Type: {$batch->batch_type}\n".
+                        "- Records: {$batch->record_count}\n".
+                        '- Submitted by: '.auth()->user()->name."\n\n".
+                        'Please review the batch at: '.route('verification.show', $batch),
+                        function ($message) use ($staff, $batch) {
+                            $message->to($staff->email)
+                                ->subject("New Batch Submitted for Verification: {$batch->name}");
+                        }
+                    );
+                } catch (\Exception $e) {
+                    Log::warning("Failed to send email notification to {$staff->email}: ".$e->getMessage());
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Error sending batch submission notifications: '.$e->getMessage());
+            // Don't fail the submission if email fails
+        }
+
         return redirect()->route('batches.show', $batch)
-            ->with('success', 'Batch submitted for verification.');
+            ->with('success', 'Batch submitted for verification. Verification staff have been notified.');
     }
 
     public function destroy(RegistryBatch $batch)
     {
-        if (!$batch->canBeEdited()) {
+        if (! $batch->canBeEdited()) {
             return back()->with('error', 'This batch cannot be deleted.');
         }
 
@@ -152,7 +186,7 @@ class RegistryBatchController extends Controller
 
     public function addRegistryEntries(Request $request, RegistryBatch $batch)
     {
-        if (!$batch->canBeEdited()) {
+        if (! $batch->canBeEdited()) {
             return back()->with('error', 'This batch cannot be modified.');
         }
 
@@ -176,7 +210,7 @@ class RegistryBatchController extends Controller
 
     public function removeRegistryEntries(Request $request, RegistryBatch $batch)
     {
-        if (!$batch->canBeEdited()) {
+        if (! $batch->canBeEdited()) {
             return back()->with('error', 'This batch cannot be modified.');
         }
 

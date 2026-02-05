@@ -5,10 +5,13 @@ import { type BreadcrumbItem, type User } from '@/types';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { flexRender } from '@tanstack/react-table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { DownloadIcon, ChevronDownIcon } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DownloadIcon, ChevronDownIcon, PlusIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { debounce } from 'lodash';
 
 interface Registry {
@@ -38,6 +41,13 @@ interface PaginationLink {
     active: boolean;
 }
 
+interface DraftBatch {
+    id: number;
+    name: string;
+    scheme: string;
+    batch_type: string;
+}
+
 interface Props {
     auth: {
         user: User | null;
@@ -53,6 +63,7 @@ interface Props {
         };
     };
     distinctYears: string[];
+    draftBatches?: DraftBatch[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -60,7 +71,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { label: 'Registry', href: '/registry' },
 ];
 
-export default function Registry({ auth, registry, distinctYears }: Props) {
+export default function Registry({ auth, registry, distinctYears, draftBatches = [] }: Props) {
     const { url } = usePage();
     const searchParams = new URLSearchParams(url.split('?')[1] || '');
     const initialSearch = searchParams.get('search') || '';
@@ -73,6 +84,9 @@ export default function Registry({ auth, registry, distinctYears }: Props) {
     const [exportError, setExportError] = useState<string | null>(null);
     const [navigationError, setNavigationError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [showBulkActions, setShowBulkActions] = useState(false);
+    const [selectedBatchId, setSelectedBatchId] = useState<string>('');
     const lastNavigatedPage = useRef(registry.meta.current_page);
 
     useEffect(() => {
@@ -96,8 +110,88 @@ export default function Registry({ auth, registry, distinctYears }: Props) {
         return token || '';
     };
 
+    // Toggle selection
+    const toggleSelection = useCallback((id: number) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
+    }, []);
+
+    // Select all on current page
+    const toggleSelectAll = useCallback(() => {
+        if (selectedIds.size === registry.data.length && registry.data.every(r => selectedIds.has(r.id))) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(registry.data.map(r => r.id)));
+        }
+    }, [selectedIds, registry.data]);
+
+    // Bulk add to batch
+    const handleBulkAddToBatch = useCallback(async () => {
+        if (!selectedBatchId || selectedIds.size === 0) return;
+        
+        const csrfToken = getCsrfToken();
+        if (!csrfToken) return;
+
+        try {
+            setIsLoading(true);
+            const response = await fetch(`/batches/${selectedBatchId}/add-entries`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    registry_ids: Array.from(selectedIds),
+                }),
+            });
+
+            if (response.ok) {
+                setSelectedIds(new Set());
+                setSelectedBatchId('');
+                setShowBulkActions(false);
+                router.reload();
+            } else {
+                const error = await response.json();
+                setNavigationError(error.message || 'Failed to add entries to batch');
+            }
+        } catch (error) {
+            console.error('Bulk add error:', error);
+            setNavigationError('Failed to add entries to batch');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [selectedBatchId, selectedIds, router]);
+
+    useEffect(() => {
+        setShowBulkActions(selectedIds.size > 0);
+    }, [selectedIds.size]);
+
     const columns: ColumnDef<Registry>[] = React.useMemo(
         () => [
+            {
+                header: () => (
+                    <Checkbox
+                        checked={registry.data.length > 0 && registry.data.every(r => selectedIds.has(r.id))}
+                        onCheckedChange={toggleSelectAll}
+                    />
+                ),
+                id: 'select',
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={selectedIds.has(row.original.id)}
+                        onCheckedChange={() => toggleSelection(row.original.id)}
+                    />
+                ),
+                enableSorting: false,
+            },
             { header: 'Surname', accessorKey: 'surname', enableSorting: true },
             { header: 'Given Name', accessorKey: 'given_name', enableSorting: true },
             { header: 'Nationality', accessorKey: 'nationality', enableSorting: true },
@@ -437,6 +531,54 @@ export default function Registry({ auth, registry, distinctYears }: Props) {
                         </button>
                     </Alert>
                 )}
+                {/* Bulk Actions Bar */}
+                {showBulkActions && (
+                    <Card className="bg-blue-50 border-blue-200">
+                        <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <span className="font-medium text-blue-900">
+                                        {selectedIds.size} {selectedIds.size === 1 ? 'entry' : 'entries'} selected
+                                    </span>
+                                    {draftBatches.length > 0 && (
+                                        <div className="flex items-center gap-2">
+                                            <Select value={selectedBatchId} onValueChange={setSelectedBatchId}>
+                                                <SelectTrigger className="w-64">
+                                                    <SelectValue placeholder="Select batch to add entries" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {draftBatches.map((batch) => (
+                                                        <SelectItem key={batch.id} value={batch.id.toString()}>
+                                                            {batch.name} ({batch.scheme} - {batch.batch_type})
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <Button
+                                                onClick={handleBulkAddToBatch}
+                                                disabled={!selectedBatchId || isLoading}
+                                                className="bg-blue-600 hover:bg-blue-700"
+                                            >
+                                                <PlusIcon className="h-4 w-4 mr-2" />
+                                                Add to Batch
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setSelectedIds(new Set());
+                                        setShowBulkActions(false);
+                                    }}
+                                >
+                                    Clear Selection
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 <div className="mb-4 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-4">
                         <Input
@@ -526,7 +668,7 @@ export default function Registry({ auth, registry, distinctYears }: Props) {
                         <p className="mt-2 text-sm text-gray-500">No registry data available.</p>
                     </div>
                 ) : (
-                    <div className="border-sidebar-border/70 dark:border-sidebar-border overflow-x-auto rounded-xl border z-0">
+                    <div className="border-gray-200 overflow-x-auto rounded-xl border z-0 bg-white">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                             {table.getHeaderGroups().map((headerGroup) => (

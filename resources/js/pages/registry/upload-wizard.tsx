@@ -1,14 +1,23 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { PageProps, User, BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertCircle, Upload, FileText, Users } from 'lucide-react';
+import { CheckCircle, AlertCircle, Upload, FileText, Users, XCircle, Pencil } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+    DialogDescription,
+} from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface Props extends PageProps {
     auth: {
@@ -36,20 +45,69 @@ interface CsvPreview {
     totalRows: number;
     validRows: number;
     duplicates: number;
+    validationDetails?: {
+        row: number;
+        errors: string[];
+    }[];
 }
+
+const STORAGE_KEY = 'upload-wizard-progress';
 
 const UploadWizard: React.FC = () => {
     const { errors, success, auth } = usePage<Props>().props;
-    const { post, setData, processing } = useForm({
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const dropZoneRef = useRef<HTMLDivElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    
+    // Load saved progress from localStorage
+    const loadSavedProgress = useCallback(() => {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                return {
+                    batch_name: parsed.batch_name || '',
+                    batch_type: parsed.batch_type || '',
+                    currentStep: parsed.currentStep || 1,
+                };
+            }
+        } catch (e) {
+            console.error('Failed to load saved progress:', e);
+        }
+        return { batch_name: '', batch_type: '', currentStep: 1 };
+    }, []);
+
+    const savedProgress = loadSavedProgress();
+    
+    const form = useForm({
         csv_file: null as File | null,
-        batch_name: '',
-        batch_type: '',
+        batch_name: savedProgress.batch_name,
+        batch_type: savedProgress.batch_type,
         entries: [] as any[],
     });
 
-    const [currentStep, setCurrentStep] = useState(1);
+    const { post, setData, processing, data } = form;
+
+    const [currentStep, setCurrentStep] = useState(savedProgress.currentStep);
     const [csvPreview, setCsvPreview] = useState<CsvPreview | null>(null);
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
+    const [showCsvEditor, setShowCsvEditor] = useState(false);
+    const [editableRows, setEditableRows] = useState<string[][]>([]);
+
+    // Auto-save progress to localStorage
+    useEffect(() => {
+        const progress = {
+            batch_name: data.batch_name,
+            batch_type: data.batch_type,
+            currentStep,
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    }, [data.batch_name, data.batch_type, currentStep]);
+
+    // Clear saved progress on successful submission
+    const clearSavedProgress = useCallback(() => {
+        localStorage.removeItem(STORAGE_KEY);
+    }, []);
 
     const steps: UploadStep[] = [
         {
@@ -82,52 +140,207 @@ const UploadWizard: React.FC = () => {
         },
     ];
 
-    const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
+    // Enhanced validation functions
+    const validatePassportFormat = (docNo: string, docType: string): string | null => {
+        if (!docNo) return null;
+        // Common passport formats: alphanumeric, 6-9 characters
+        const passportRegex = /^[A-Z0-9]{6,9}$/i;
+        if (docType?.toLowerCase().includes('passport') && !passportRegex.test(docNo)) {
+            return 'Passport number should be 6-9 alphanumeric characters';
+        }
+        return null;
+    };
 
+    const calculateAge = (dob: string): number | null => {
+        if (!dob) return null;
+        try {
+            // Try to parse various date formats
+            const dateStr = dob.replace(/-/g, '/');
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return null;
+            const today = new Date();
+            let age = today.getFullYear() - date.getFullYear();
+            const monthDiff = today.getMonth() - date.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
+                age--;
+            }
+            return age >= 0 ? age : null;
+        } catch {
+            return null;
+        }
+    };
+
+    const validateDateLogic = (travelDate: string, direction: string): string | null => {
+        // This would need return_date field to fully validate
+        // For now, just validate date format
+        if (!travelDate) return null;
+        const dateRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
+        if (!dateRegex.test(travelDate)) {
+            return 'Travel date should be in format DD/MM/YYYY';
+        }
+        return null;
+    };
+
+    // Run validation on headers + rows and return CsvPreview (reused after file load and after edit)
+    const runValidation = useCallback((headers: string[], rows: string[][]): CsvPreview => {
+        const validationDetails: { row: number; errors: string[] }[] = [];
+        const validRows: string[][] = [];
+        const duplicates = new Map<string, number[]>();
+
+        rows.forEach((row, index) => {
+            const rowNum = index + 2;
+            const errors: string[] = [];
+            if (row.length < headers.length) {
+                errors.push(`Row ${rowNum}: Missing columns (expected ${headers.length}, got ${row.length})`);
+            }
+            const [surname, givenName, nationality, countryResidence, nationalId, docType, docNo, dob, age, sex, travelDate, direction] = row;
+            if (!surname || !givenName || !nationality || !docType || !docNo) {
+                errors.push(`Row ${rowNum}: Missing required fields`);
+            }
+            const passportError = validatePassportFormat(docNo ?? '', docType ?? '');
+            if (passportError) errors.push(`Row ${rowNum}: ${passportError}`);
+            if (dob && age) {
+                const calculatedAge = calculateAge(dob);
+                if (calculatedAge !== null && calculatedAge !== parseInt(age)) {
+                    errors.push(`Row ${rowNum}: Age mismatch (calculated: ${calculatedAge}, provided: ${age})`);
+                }
+            }
+            const dateError = validateDateLogic(travelDate ?? '', direction ?? '');
+            if (dateError) errors.push(`Row ${rowNum}: ${dateError}`);
+            const docKey = `${nationality}-${docNo}`;
+            if (duplicates.has(docKey)) {
+                duplicates.get(docKey)!.push(rowNum);
+            } else {
+                duplicates.set(docKey, [rowNum]);
+            }
+            if (errors.length === 0) {
+                validRows.push(row);
+            } else {
+                validationDetails.push({ row: rowNum, errors });
+            }
+        });
+
+        const duplicateRows = Array.from(duplicates.entries())
+            .filter(([, rowNums]) => rowNums.length > 1)
+            .flatMap(([, rowNums]) => rowNums);
+
+        return {
+            headers,
+            rows,
+            totalRows: rows.length,
+            validRows: validRows.length,
+            duplicates: duplicateRows.length,
+            validationDetails,
+        };
+    }, []);
+
+    const openCsvEditor = useCallback(() => {
+        if (!csvPreview) return;
+        const numCols = csvPreview.headers.length;
+        const padded = csvPreview.rows.map((row) =>
+            [...row].concat(Array(Math.max(0, numCols - row.length)).fill(''))
+        );
+        setEditableRows(padded);
+        setShowCsvEditor(true);
+    }, [csvPreview]);
+
+    const updateEditableCell = useCallback((rowIndex: number, colIndex: number, value: string) => {
+        setEditableRows((prev) => {
+            const next = prev.map((r) => [...r]);
+            if (!next[rowIndex]) return prev;
+            next[rowIndex] = [...next[rowIndex]];
+            next[rowIndex][colIndex] = value;
+            return next;
+        });
+    }, []);
+
+    const applyEditedCsv = useCallback(() => {
+        if (!csvPreview) return;
+        const numCols = csvPreview.headers.length;
+        const normalized = editableRows.map((row) =>
+            [...row].slice(0, numCols).concat(Array(Math.max(0, numCols - row.length)).fill(''))
+        );
+        const nextPreview = runValidation(csvPreview.headers, normalized);
+        setCsvPreview(nextPreview);
+        setValidationErrors(
+            (nextPreview.validationDetails ?? []).map((d) => d.errors.join('; ')).flat()
+        );
+        setShowCsvEditor(false);
+    }, [csvPreview, editableRows, runValidation]);
+
+    const processCsvFile = useCallback((file: File) => {
         setData('csv_file', file);
 
-        // Preview CSV content
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             const text = e.target?.result as string;
             const lines = text.split('\n').filter(line => line.trim());
             const headers = lines[0]?.split(',').map(h => h.trim().replace(/"/g, '')) || [];
-            const rows = lines.slice(1).map(line => line.split(',').map(cell => cell.trim().replace(/"/g, '')));
-            
-            // Basic validation
-            const validRows = rows.filter(row => {
-                if (row.length < 5) return false; // Minimum required fields
-                const [surname, givenName, nationality, docType, docNo] = row;
-                return surname && givenName && nationality && docType && docNo;
-            });
-
-            const duplicates = new Map<string, number>();
-            rows.forEach((row, index) => {
-                const docKey = `${row[2]}-${row[3]}`; // nationality-docNo
-                if (duplicates.has(docKey)) {
-                    duplicates.set(docKey, (duplicates.get(docKey) || 0) + 1);
-                } else {
-                    duplicates.set(docKey, 1);
+            const rows = lines.slice(1).map(line => {
+                // Handle CSV with quoted fields
+                const cells: string[] = [];
+                let current = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        cells.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
                 }
+                cells.push(current.trim());
+                return cells;
             });
 
-            setCsvPreview({
-                headers,
-                rows,
-                totalRows: rows.length,
-                validRows: validRows.length,
-                duplicates: duplicates.size,
-            });
-
-            // Auto-advance to validation step
-            if (validRows.length > 0) {
-                setCurrentStep(2);
-            }
+            const result = runValidation(headers, rows);
+            setValidationErrors(
+                (result.validationDetails ?? []).map((d) => d.errors.join('; ')).flat()
+            );
+            setCsvPreview(result);
         };
         reader.readAsText(file);
+    }, [setData, runValidation]);
+
+    const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file && file.type === 'text/csv' || file.name.endsWith('.csv')) {
+            processCsvFile(file);
+        }
+    }, [processCsvFile]);
+
+    // Drag and drop handlers
+    const handleDragEnter = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
     }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    }, []);
+
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, []);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const files = Array.from(e.dataTransfer.files);
+        const csvFile = files.find(f => f.type === 'text/csv' || f.name.endsWith('.csv'));
+        if (csvFile) {
+            processCsvFile(csvFile);
+        }
+    }, [processCsvFile]);
 
     const handleStepComplete = useCallback(() => {
         const nextStep = Math.min(currentStep + 1, steps.length);
@@ -151,20 +364,68 @@ const UploadWizard: React.FC = () => {
                 setData('entries', []);
                 setCurrentStep(1);
                 setCsvPreview(null);
+                clearSavedProgress();
             },
         });
     }, [currentStep]);
 
-    const getStepIcon = (step: UploadStep) => {
+    // Derive completed state for each step (1-based index)
+    const isStepCompleted = useCallback((stepIndex: number) => {
+        const oneBased = stepIndex + 1;
+        // Step 1: completed when CSV file has been selected
+        if (oneBased === 1) return !!csvPreview;
+        // Step 2: completed when we've moved past it
+        if (oneBased === 2) return currentStep > 2;
+        // Step 3: completed when we've moved past it
+        if (oneBased === 3) return currentStep > 3;
+        // Step 4: in progress when on it, not "completed" until form submits
+        return false;
+    }, [csvPreview, currentStep]);
+
+    // Step has validation errors (show red, hide Next button)
+    const isStepHasError = useCallback((stepIndex: number) => {
+        const oneBased = stepIndex + 1;
+        const isCurrentStep = currentStep === oneBased;
+        if (!isCurrentStep) return false; // only current step can be in "error" state
+        // Step 1: error when no file selected
+        if (oneBased === 1) return !csvPreview;
+        // Step 2: error when no valid rows
+        if (oneBased === 2) return !csvPreview || csvPreview.validRows === 0;
+        // Step 3: no validation, always can proceed
+        if (oneBased === 3) return false;
+        // Step 4: error when batch name or type missing
+        if (oneBased === 4) return !data.batch_name?.trim() || !data.batch_type;
+        return false;
+    }, [currentStep, csvPreview, data.batch_name, data.batch_type]);
+
+    const getStepIcon = (step: UploadStep, stepIndex: number) => {
         const Icon = step.icon;
-        return <Icon className={`w-6 h-6 ${step.completed ? 'text-green-600' : 'text-gray-400'}`} />;
+        const completed = isStepCompleted(stepIndex);
+        const hasError = isStepHasError(stepIndex);
+        if (hasError) return <XCircle className="w-6 h-6 text-red-600 shrink-0" aria-hidden />;
+        if (completed) return <CheckCircle className="w-6 h-6 text-green-600 shrink-0" aria-hidden />;
+        return (
+            <Icon className={`w-6 h-6 ${currentStep === stepIndex + 1 ? 'text-blue-600' : 'text-gray-400'}`} />
+        );
     };
 
-    const getStepColor = (step: UploadStep) => {
-        if (step.completed) return 'bg-green-50 border-green-200';
-        if (step.id === currentStep.toString()) return 'bg-blue-50 border-blue-200';
+    const getStepColor = (stepIndex: number) => {
+        const hasError = isStepHasError(stepIndex);
+        const completed = isStepCompleted(stepIndex);
+        const isCurrent = currentStep === stepIndex + 1;
+        if (hasError) return 'bg-red-50 border-red-400';
+        if (completed) return 'bg-green-50 border-green-300';
+        if (isCurrent) return 'bg-blue-50 border-blue-300';
         return 'bg-gray-50 border-gray-200';
     };
+
+    // Current step is valid (no errors) — show Next/Continue/Submit button
+    const isCurrentStepValid = isStepHasError(currentStep - 1) === false;
+
+    // Step is unlocked (user can click to go to it). Only current step or completed steps are clickable.
+    const isStepUnlocked = useCallback((stepIndex: number) => {
+        return currentStep >= stepIndex + 1;
+    }, [currentStep]);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { href: '/dashboard', label: 'Dashboard' },
@@ -175,7 +436,7 @@ const UploadWizard: React.FC = () => {
         <AppLayout auth={auth} breadcrumbs={breadcrumbs}>
             <Head title="Upload Registry Data - Wizard" />
             <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 py-12">
-                <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
                     <div className="p-6 bg-white border-b border-gray-200">
                         <div className="flex justify-between items-center mb-6">
                             <h1 className="text-2xl font-bold">Upload Registry Data - Wizard</h1>
@@ -198,21 +459,53 @@ const UploadWizard: React.FC = () => {
 
                         {/* Step Progress */}
                         <div className="mb-8">
-                            <div className="flex justify-between">
-                                {steps.map((step, index) => (
-                                    <div
-                                        key={step.id}
-                                        className={`flex-1 text-center p-4 border-2 rounded-lg cursor-pointer transition-colors ${getStepColor(step)}`}
-                                        onClick={() => setCurrentStep(index + 1)}
-                                    >
-                                        {getStepIcon(step)}
-                                        <h3 className="font-semibold mt-2">{step.title}</h3>
-                                        <p className="text-sm text-gray-600 mt-1">{step.description}</p>
-                                        {step.completed && (
-                                            <CheckCircle className="w-4 h-4 text-green-600 mx-auto mt-2" />
-                                        )}
-                                    </div>
-                                ))}
+                            <div className="flex justify-between gap-2">
+                                {steps.map((step, index) => {
+                                    const completed = isStepCompleted(index);
+                                    const hasError = isStepHasError(index);
+                                    const unlocked = isStepUnlocked(index);
+                                    return (
+                                        <div
+                                            key={step.id}
+                                            className={`flex-1 text-center p-4 border-2 rounded-lg transition-all duration-200 ${getStepColor(index)} ${
+                                                completed ? 'ring-2 ring-green-400/50 ring-offset-2' : ''
+                                            } ${hasError ? 'ring-2 ring-red-400/50 ring-offset-2' : ''} ${
+                                                unlocked
+                                                    ? 'cursor-pointer'
+                                                    : 'cursor-not-allowed opacity-60 pointer-events-none'
+                                            }`}
+                                            onClick={() => unlocked && setCurrentStep(index + 1)}
+                                            aria-disabled={!unlocked}
+                                        >
+                                            {getStepIcon(step, index)}
+                                            <h3 className={`font-semibold mt-2 ${
+                                                completed ? 'text-green-800' : ''
+                                            } ${hasError ? 'text-red-800' : ''} ${
+                                                !unlocked ? 'text-gray-500' : ''
+                                            }`}>
+                                                {step.title}
+                                            </h3>
+                                            <p className="text-sm text-gray-600 mt-1">{step.description}</p>
+                                            {!unlocked && (
+                                                <span className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-gray-500">
+                                                    Locked
+                                                </span>
+                                            )}
+                                            {completed && unlocked && (
+                                                <span className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-green-700">
+                                                    <CheckCircle className="w-3.5 h-3.5" />
+                                                    Completed
+                                                </span>
+                                            )}
+                                            {hasError && (
+                                                <span className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-red-700">
+                                                    <XCircle className="w-3.5 h-3.5" />
+                                                    Fix issues to continue
+                                                </span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
 
@@ -228,15 +521,39 @@ const UploadWizard: React.FC = () => {
                                     </CardHeader>
                                     <CardContent>
                                         <div className="space-y-4">
-                                            <div>
-                                                <Label htmlFor="csv_file">Choose CSV File</Label>
+                                            {/* Drag and Drop Zone */}
+                                            <div
+                                                ref={dropZoneRef}
+                                                onDragEnter={handleDragEnter}
+                                                onDragOver={handleDragOver}
+                                                onDragLeave={handleDragLeave}
+                                                onDrop={handleDrop}
+                                                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                                                    isDragging
+                                                        ? 'border-blue-500 bg-blue-50'
+                                                        : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+                                                }`}
+                                            >
+                                                <Upload className={`w-12 h-12 mx-auto mb-4 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`} />
+                                                <p className="text-lg font-medium mb-2">
+                                                    {isDragging ? 'Drop CSV file here' : 'Drag and drop CSV file here'}
+                                                </p>
+                                                <p className="text-sm text-gray-500 mb-4">or</p>
                                                 <Input
+                                                    ref={fileInputRef}
                                                     type="file"
                                                     id="csv_file"
                                                     accept=".csv"
                                                     onChange={handleFileSelect}
-                                                    className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                                    className="hidden"
                                                 />
+                                                <Button
+                                                    type="button"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    variant="outline"
+                                                >
+                                                    Choose File
+                                                </Button>
                                             </div>
                                             
                                             {csvPreview && (
@@ -277,6 +594,20 @@ const UploadWizard: React.FC = () => {
                                                                 </Badge>
                                                             ))}
                                                         </div>
+                                                    </div>
+                                                    <div className="mt-6">
+                                                        {isCurrentStepValid ? (
+                                                            <Button
+                                                                onClick={handleStepComplete}
+                                                                className="w-full bg-green-600 hover:bg-green-700"
+                                                            >
+                                                                Next: Validate Data
+                                                            </Button>
+                                                        ) : (
+                                                            <p className="text-center text-sm text-gray-500 py-2">
+                                                                Select a CSV file to continue.
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             )}
@@ -321,14 +652,50 @@ const UploadWizard: React.FC = () => {
                                                         </Alert>
                                                     )}
 
-                                                    <div className="mt-6">
-                                                        <Button 
-                                                            onClick={handleStepComplete}
-                                                            className="w-full"
-                                                            disabled={csvPreview.validRows === 0}
+                                                    {/* Detailed validation errors */}
+                                                    {csvPreview.validationDetails && csvPreview.validationDetails.length > 0 && (
+                                                        <div className="mt-4 max-h-64 overflow-y-auto border rounded-lg p-4">
+                                                            <h4 className="font-semibold mb-2 text-red-800">Validation Errors:</h4>
+                                                            <ul className="space-y-2 text-sm">
+                                                                {csvPreview.validationDetails.map((detail, idx) => (
+                                                                    <li key={idx} className="text-red-700">
+                                                                        <strong>Row {detail.row}:</strong> {detail.errors.join('; ')}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="mt-4 flex flex-col gap-3">
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            onClick={openCsvEditor}
+                                                            className="w-full border-dashed"
                                                         >
-                                                            {csvPreview.validRows > 0 ? 'Continue to Field Mapping' : 'Fix Issues First'}
+                                                            <Pencil className="w-4 h-4 mr-2" />
+                                                            Edit CSV data
                                                         </Button>
+                                                        <p className="text-xs text-gray-500 text-center">
+                                                            {csvPreview.validationDetails && csvPreview.validationDetails.length > 0
+                                                                ? 'Fix validation errors by editing the data in the editor, then click Apply changes.'
+                                                                : 'You can edit the data in the system and re-validate before continuing.'}
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="mt-6">
+                                                        {isCurrentStepValid ? (
+                                                            <Button 
+                                                                onClick={handleStepComplete}
+                                                                className="w-full bg-green-600 hover:bg-green-700"
+                                                            >
+                                                                Continue to Field Mapping
+                                                            </Button>
+                                                        ) : (
+                                                            <p className="text-center text-sm text-red-600 py-2">
+                                                                Fix validation issues above to continue.
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 </>
                                             )}
@@ -381,7 +748,7 @@ const UploadWizard: React.FC = () => {
                                             </div>
 
                                             <div className="mt-6">
-                                                <Button onClick={handleStepComplete} className="w-full">
+                                                <Button onClick={handleStepComplete} className="w-full bg-green-600 hover:bg-green-700">
                                                     Continue to Batch Creation
                                                 </Button>
                                             </div>
@@ -405,16 +772,21 @@ const UploadWizard: React.FC = () => {
                                                 <Input
                                                     id="batch_name"
                                                     type="text"
+                                                    value={data.batch_name}
                                                     placeholder="e.g., January 2026 RSE Departures"
                                                     className="w-full"
                                                     onChange={(e) => setData('batch_name', e.target.value)}
                                                 />
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Suggested: {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })} {data.batch_type ? data.batch_type.charAt(0).toUpperCase() + data.batch_type.slice(1) : ''} Batch
+                                                </p>
                                             </div>
                                             
                                             <div>
                                                 <Label htmlFor="batch_type">Batch Type</Label>
                                                 <select
                                                     id="batch_type"
+                                                    value={data.batch_type}
                                                     className="w-full p-2 border rounded-md"
                                                     onChange={(e) => setData('batch_type', e.target.value)}
                                                 >
@@ -427,13 +799,19 @@ const UploadWizard: React.FC = () => {
                                             </div>
 
                                             <div className="mt-6">
-                                                <Button 
-                                                    type="submit"
-                                                    disabled={processing || !csvPreview}
-                                                    className="w-full"
-                                                >
-                                                    {processing ? 'Creating Batch...' : 'Create Batch & Import Data'}
-                                                </Button>
+                                                {isCurrentStepValid ? (
+                                                    <Button 
+                                                        type="submit"
+                                                        disabled={processing || !csvPreview}
+                                                        className="w-full bg-green-600 hover:bg-green-700"
+                                                    >
+                                                        {processing ? 'Creating Batch...' : 'Create Batch & Import Data'}
+                                                    </Button>
+                                                ) : (
+                                                    <p className="text-center text-sm text-red-600 py-2">
+                                                        Enter batch name and type to continue.
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                     </CardContent>
@@ -443,6 +821,59 @@ const UploadWizard: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Edit CSV data dialog */}
+            <Dialog open={showCsvEditor} onOpenChange={setShowCsvEditor}>
+                <DialogContent className="max-w-[98vw] w-[98vw] max-h-[95vh] h-[90vh] flex flex-col min-w-[80vw]">
+                    <DialogHeader>
+                        <DialogTitle>Edit CSV data</DialogTitle>
+                        <DialogDescription>
+                            Edit the table below to fix validation errors. Changes are applied in memory only. Click Apply changes to re-validate.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex-1 overflow-auto min-h-[60vh] border rounded-md">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/50">
+                                    <TableHead className="w-12 shrink-0 text-xs">#</TableHead>
+                                    {csvPreview?.headers.map((h, i) => (
+                                        <TableHead key={i} className="text-xs whitespace-nowrap min-w-[100px]">
+                                            {h}
+                                        </TableHead>
+                                    ))}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {editableRows.map((row, rowIdx) => (
+                                    <TableRow key={rowIdx}>
+                                        <TableCell className="font-mono text-xs text-muted-foreground shrink-0">
+                                            {rowIdx + 2}
+                                        </TableCell>
+                                        {row.map((cell, colIdx) => (
+                                            <TableCell key={colIdx} className="p-0">
+                                                <input
+                                                    type="text"
+                                                    value={cell}
+                                                    onChange={(e) => updateEditableCell(rowIdx, colIdx, e.target.value)}
+                                                    className="w-full min-w-[80px] px-2 py-1.5 text-sm border-0 rounded bg-background hover:bg-muted/50 focus:bg-background focus:ring-1 focus:ring-ring"
+                                                />
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowCsvEditor(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={applyEditedCsv} className="bg-green-600 hover:bg-green-700">
+                            Apply changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 };
