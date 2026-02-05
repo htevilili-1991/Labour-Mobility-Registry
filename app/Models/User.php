@@ -49,6 +49,21 @@ class User extends Authenticatable
         return $this->belongsToMany(Permission::class);
     }
 
+    public function registryBatches()
+    {
+        return $this->hasMany(RegistryBatch::class, 'submitted_by');
+    }
+
+    public function verifiedBatches()
+    {
+        return $this->hasMany(RegistryBatch::class, 'verified_by');
+    }
+
+    public function approvedBatches()
+    {
+        return $this->hasMany(RegistryBatch::class, 'approved_by');
+    }
+
     public function assignRole(Role|string $role): void
     {
         if (is_string($role)) {

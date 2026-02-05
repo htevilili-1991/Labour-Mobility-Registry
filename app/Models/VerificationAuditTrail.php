@@ -10,6 +10,8 @@ class VerificationAuditTrail extends Model
 {
     use HasFactory;
 
+    protected $table = 'verification_audit_trail';
+
     protected $fillable = [
         'registry_id',
         'registry_batch_id',

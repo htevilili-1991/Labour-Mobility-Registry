@@ -3,6 +3,9 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RegistryController;
 use App\Http\Controllers\AuditController;
+use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\RegistryBatchController;
+use App\Http\Controllers\VerificationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -36,6 +39,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/audits', [AuditController::class, 'index'])->name('audits.index');
     Route::delete('/audits', [AuditController::class, 'clear'])->name('audits.clear');
+
+    // Reports and Analytics routes
+    Route::prefix('reports')->middleware('permission:reports.view')->group(function () {
+        Route::get('/', [ReportsController::class, 'index'])->name('reports.dashboard');
+        Route::get('/verification', [ReportsController::class, 'verificationReport'])->name('reports.verification');
+        Route::get('/compliance', [ReportsController::class, 'complianceReport'])->name('reports.compliance');
+        Route::get('/performance', [ReportsController::class, 'performanceReport'])->name('reports.performance');
+        Route::get('/export', [ReportsController::class, 'export'])->name('reports.export');
+        Route::get('/real-time', [ReportsController::class, 'realTimeData'])->name('reports.realtime');
+    });
 
     // Registry batch routes (VBoS data entry)
     Route::prefix('batches')->middleware('permission:batches.view')->group(function () {

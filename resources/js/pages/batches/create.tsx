@@ -1,0 +1,160 @@
+import { Head, Link, useForm } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem, type User } from '@/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+interface Props {
+    auth: { user: User | null };
+    schemes: string[];
+    batchTypes: string[];
+}
+
+const breadcrumbs: BreadcrumbItem[] = [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Batches', href: '/batches' },
+    { label: 'Create', href: '/batches/create' }
+];
+
+export default function BatchCreate({ auth, schemes, batchTypes }: Props) {
+    const { data, setData, post, processing, errors } = useForm({
+        name: '',
+        batch_type: '',
+        scheme: '',
+        period_start: '',
+        period_end: '',
+        description: '',
+    });
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        post('/batches');
+    };
+
+    return (
+        <AppLayout breadcrumbs={breadcrumbs} auth={auth}>
+            <Head title="Create Batch" />
+            <div className="flex flex-col gap-4 p-4">
+                <div className="flex justify-between items-center">
+                    <h1 className="text-2xl font-bold">Create Registry Batch</h1>
+                    <Link href="/batches">
+                        <Button variant="outline">Back to Batches</Button>
+                    </Link>
+                </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Batch Information</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="name">Batch Name *</Label>
+                                    <Input
+                                        id="name"
+                                        type="text"
+                                        value={data.name}
+                                        onChange={(e) => setData('name', e.target.value)}
+                                        placeholder="e.g., January 2026 RSE Departures"
+                                        required
+                                    />
+                                    {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+                                </div>
+                                <div>
+                                    <Label htmlFor="scheme">Labour Scheme *</Label>
+                                    <Select value={data.scheme} onValueChange={(value) => setData('scheme', value)}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select scheme" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {schemes.map((scheme) => (
+                                                <SelectItem key={scheme} value={scheme}>{scheme}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.scheme && <p className="text-red-500 text-sm mt-1">{errors.scheme}</p>}
+                                </div>
+                                <div>
+                                    <Label htmlFor="batch_type">Batch Type *</Label>
+                                    <Select value={data.batch_type} onValueChange={(value) => setData('batch_type', value)}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {batchTypes.map((type) => (
+                                                <SelectItem key={type} value={type}>{type}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.batch_type && <p className="text-red-500 text-sm mt-1">{errors.batch_type}</p>}
+                                </div>
+                                <div>
+                                    <Label htmlFor="description">Description</Label>
+                                    <Input
+                                        id="description"
+                                        type="text"
+                                        value={data.description}
+                                        onChange={(e) => setData('description', e.target.value)}
+                                        placeholder="Optional description"
+                                    />
+                                    {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="period_start">Period Start *</Label>
+                                    <Input
+                                        id="period_start"
+                                        type="date"
+                                        value={data.period_start}
+                                        onChange={(e) => setData('period_start', e.target.value)}
+                                        required
+                                    />
+                                    {errors.period_start && <p className="text-red-500 text-sm mt-1">{errors.period_start}</p>}
+                                </div>
+                                <div>
+                                    <Label htmlFor="period_end">Period End *</Label>
+                                    <Input
+                                        id="period_end"
+                                        type="date"
+                                        value={data.period_end}
+                                        onChange={(e) => setData('period_end', e.target.value)}
+                                        min={data.period_start}
+                                        required
+                                    />
+                                    {errors.period_end && <p className="text-red-500 text-sm mt-1">{errors.period_end}</p>}
+                                </div>
+                            </div>
+
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <h3 className="font-semibold text-blue-900 mb-2">Next Steps</h3>
+                                <p className="text-blue-800 text-sm">
+                                    After creating this batch, you will be able to:
+                                </p>
+                                <ul className="text-blue-800 text-sm mt-2 list-disc list-inside space-y-1">
+                                    <li>Add registry entries to this batch</li>
+                                    <li>Edit batch details while in draft status</li>
+                                    <li>Submit the batch for Labour Department verification</li>
+                                </ul>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <Button type="submit" disabled={processing}>
+                                    {processing ? 'Creating...' : 'Create Batch'}
+                                </Button>
+                                <Link href="/batches">
+                                    <Button type="button" variant="outline">Cancel</Button>
+                                </Link>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
+            </div>
+        </AppLayout>
+    );
+}
