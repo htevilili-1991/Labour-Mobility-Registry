@@ -32,10 +32,10 @@ class DashboardController extends Controller
                 ->get()
                 ->groupBy(function ($item) {
                     $date = \Carbon::parse($item->travel_date);
-                    return $date->format('Y-m') => $item->count;
+                    return $date->format('Y-m');
                 })
-                ->mapWithKeys(function ($item) {
-                    return [(int)$item->year . '-' . str_pad((int)$item->month, 2, '0', STR_PAD_LEFT) => (int) $item->count];
+                ->mapWithKeys(function ($group, $key) {
+                    return [$key => $group->count()];
                 })
                 ->toArray();
 
@@ -67,12 +67,13 @@ class DashboardController extends Controller
                 ->groupBy('sex')
                 ->orderByDesc('count')
                 ->get()
-                ->mapWithKeys(function ($item) {
+                ->map(function ($item) {
                     return [
                         'name' => $item->sex ?? 'Unknown',
                         'y' => (int) $item->count,
                     ];
                 })
+                ->toArray();
 
             // Recent 5 records
             $recentRecords = Registry::select([
@@ -81,14 +82,12 @@ class DashboardController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->take(5)
                 ->get()
-                ->map(function ($record) {
+                ->map(function ($item) {
                     return [
-                        'id' => $record->id,
-                        'surname' => $record->surname ?? 'N/A',
-                        'given_name' => $record->given_name ?? 'N/A',
-                        'nationality' => $record->nationality ?? 'N/A',
-                        'travel_date' => $record->travel_date ? Carbon::createFromFormat('d/m/Y', $record->travel_date)->toDateString() : null,
-                        'created_at' => Carbon::parse($record->created_at)->toDateTimeString(),
+                        'id' => $item->id,
+                        'surname' => $item->surname ?? 'N/A',
+                        'given_name' => $item->given_name ?? 'N/A',
+                        'nationality' => $item->nationality ?? 'N/A',
                     ];
                 })
                 ->toArray();
