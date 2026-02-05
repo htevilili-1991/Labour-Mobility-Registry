@@ -37,6 +37,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/audits', [AuditController::class, 'index'])->name('audits.index');
     Route::delete('/audits', [AuditController::class, 'clear'])->name('audits.clear');
 
+    // Registry batch routes (VBoS data entry)
+    Route::prefix('batches')->middleware('permission:batches.view')->group(function () {
+        Route::get('/', [RegistryBatchController::class, 'index'])->name('batches.index');
+        Route::get('/create', [RegistryBatchController::class, 'create'])->middleware('permission:batches.create')->name('batches.create');
+        Route::post('/', [RegistryBatchController::class, 'store'])->middleware('permission:batches.create')->name('batches.store');
+        Route::get('/{batch}', [RegistryBatchController::class, 'show'])->name('batches.show');
+        Route::get('/{batch}/edit', [RegistryBatchController::class, 'edit'])->middleware('permission:batches.edit')->name('batches.edit');
+        Route::put('/{batch}', [RegistryBatchController::class, 'update'])->middleware('permission:batches.edit')->name('batches.update');
+        Route::delete('/{batch}', [RegistryBatchController::class, 'destroy'])->middleware('permission:batches.edit')->name('batches.destroy');
+        Route::post('/{batch}/submit', [RegistryBatchController::class, 'submit'])->middleware('permission:batches.submit')->name('batches.submit');
+        Route::post('/{batch}/add-entries', [RegistryBatchController::class, 'addRegistryEntries'])->middleware('permission:batches.edit')->name('batches.add-entries');
+        Route::post('/{batch}/remove-entries', [RegistryBatchController::class, 'removeRegistryEntries'])->middleware('permission:batches.edit')->name('batches.remove-entries');
+    });
+
+    // Verification routes (Labour Department)
+    Route::prefix('verification')->middleware('permission:batches.verify')->group(function () {
+        Route::get('/', [VerificationController::class, 'index'])->name('verification.index');
+        Route::get('/dashboard', [VerificationController::class, 'dashboard'])->name('verification.dashboard');
+        Route::get('/{batch}', [VerificationController::class, 'show'])->name('verification.show');
+        Route::post('/{batch}/verify', [VerificationController::class, 'verify'])->name('verification.verify');
+        Route::post('/{batch}/approve', [VerificationController::class, 'approve'])->middleware('permission:batches.approve')->name('verification.approve');
+        Route::post('/{batch}/reject', [VerificationController::class, 'reject'])->middleware('permission:batches.reject')->name('verification.reject');
+        Route::get('/{batch}/audit', [VerificationController::class, 'auditTrail'])->middleware('permission:batches.audit')->name('verification.audit');
+    });
+
     // Admin routes
     Route::prefix('admin')->middleware('admin')->group(function () {
         // Role management

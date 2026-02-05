@@ -21,6 +21,16 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'registry.upload', 'display_name' => 'Upload Registry', 'group' => 'registry', 'description' => 'Upload registry data via CSV'],
             ['name' => 'registry.export', 'display_name' => 'Export Registry', 'group' => 'registry', 'description' => 'Export registry data'],
             
+            // Batch management permissions
+            ['name' => 'batches.create', 'display_name' => 'Create Batches', 'group' => 'batches', 'description' => 'Create new registry batches'],
+            ['name' => 'batches.view', 'display_name' => 'View Batches', 'group' => 'batches', 'description' => 'View registry batches'],
+            ['name' => 'batches.edit', 'display_name' => 'Edit Batches', 'group' => 'batches', 'description' => 'Edit draft batches'],
+            ['name' => 'batches.submit', 'display_name' => 'Submit Batches', 'group' => 'batches', 'description' => 'Submit batches for verification'],
+            ['name' => 'batches.verify', 'display_name' => 'Verify Batches', 'group' => 'batches', 'description' => 'Verify submitted batches'],
+            ['name' => 'batches.approve', 'display_name' => 'Approve Batches', 'group' => 'batches', 'description' => 'Approve verified batches'],
+            ['name' => 'batches.reject', 'display_name' => 'Reject Batches', 'group' => 'batches', 'description' => 'Reject batches with comments'],
+            ['name' => 'batches.audit', 'display_name' => 'View Batch Audit', 'group' => 'batches', 'description' => 'View batch audit trail'],
+            
             // User management permissions
             ['name' => 'users.view', 'display_name' => 'View Users', 'group' => 'users', 'description' => 'View user list and details'],
             ['name' => 'users.create', 'display_name' => 'Create Users', 'group' => 'users', 'description' => 'Create new users'],
@@ -70,6 +80,39 @@ class RolePermissionSeeder extends Seeder
                     'users.view', 'users.edit', 'users.manage-roles',
                     'roles.view',
                     'reports.view', 'reports.create', 'reports.edit',
+                    'audits.view'
+                ]
+            ],
+            [
+                'name' => 'vbos-data-entry',
+                'display_name' => 'VBoS Data Entry',
+                'description' => 'Vanuatu Bureau of Statistics staff - Data entry and batch management',
+                'permissions' => [
+                    'registry.view', 'registry.create', 'registry.edit', 'registry.upload', 'registry.export',
+                    'batches.create', 'batches.view', 'batches.edit', 'batches.submit',
+                    'reports.view'
+                ]
+            ],
+            [
+                'name' => 'labour-verification',
+                'display_name' => 'Labour Verification',
+                'description' => 'Labour Department staff - Verification and approval of batches',
+                'permissions' => [
+                    'registry.view', 'registry.export',
+                    'batches.view', 'batches.verify', 'batches.approve', 'batches.reject', 'batches.audit',
+                    'reports.view', 'reports.create', 'reports.edit'
+                ]
+            ],
+            [
+                'name' => 'labour-oversight',
+                'display_name' => 'Labour Oversight',
+                'description' => 'Labour Department senior staff - Full oversight and reporting',
+                'permissions' => [
+                    'registry.view', 'registry.export',
+                    'batches.view', 'batches.verify', 'batches.approve', 'batches.reject', 'batches.audit',
+                    'users.view', 'users.manage-roles',
+                    'roles.view',
+                    'reports.view', 'reports.create', 'reports.edit', 'reports.delete',
                     'audits.view'
                 ]
             ],
