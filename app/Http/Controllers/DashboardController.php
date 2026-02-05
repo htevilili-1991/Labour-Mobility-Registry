@@ -29,26 +29,20 @@ class DashboardController extends Controller
 
             // Monthly records by travel_date (last 12 months)
             $monthlyRecordsTravel = Registry::select(
-                DB::raw("CASE 
-                    WHEN TO_CHAR(travel_date, 'DD/MM/YYYY') ~ '^\d{2}/\d{2}/\d{4}$' AND 
-                         SUBSTRING(TO_CHAR(travel_date, 'DD/MM/YYYY'), 1, 2) BETWEEN '01' AND '31' AND
-                         SUBSTRING(TO_CHAR(travel_date, 'DD/MM/YYYY'), 4, 5) BETWEEN '01' AND '12' AND
-                         SUBSTRING(TO_CHAR(travel_date, 'DD/MM/YYYY'), 7, 10) BETWEEN '20' AND '99' THEN
-                         'Invalid'
-                    ELSE TO_CHAR(TO_DATE(travel_date, 'DD/MM/YYYY'), 'YYYY-MM')
-                END as month"),
+                DB::raw("EXTRACT(YEAR FROM travel_date) as year"),
+                DB::raw("EXTRACT(MONTH FROM travel_date) as month"),
                 DB::raw('COUNT(*) as count')
             )
                 ->whereNotNull('travel_date')
-                ->whereRaw("TO_CHAR(travel_date, 'DD/MM/YYYY') ~ '^\d{2}/\d{2}/\d{4}$' AND 
-                         SUBSTRING(TO_CHAR(travel_date, 'DD/MM/YYYY'), 1, 2) BETWEEN '01' AND '31' AND
-                         SUBSTRING(TO_CHAR(travel_date, 'DD/MM/YYYY'), 4, 5) BETWEEN '01' AND '12' AND
-                         SUBSTRING(TO_CHAR(travel_date, 'DD/MM/YYYY'), 7, 10) BETWEEN '20' AND '99'")
-                ->groupBy(DB::raw("month"))
-                ->orderByRaw("month")
+                ->whereRaw("travel_date ~ '^\d{2}/\d{2}/\d{4}$' AND 
+                         EXTRACT(MONTH FROM travel_date) BETWEEN 1 AND 12 AND
+                         EXTRACT(DAY FROM travel_date) BETWEEN 1 AND 31 AND
+                         EXTRACT(YEAR FROM travel_date) BETWEEN 20 AND 99")
+                ->groupBy(DB::raw("year, month"))
+                ->orderByRaw("year, month")
                 ->get()
                 ->mapWithKeys(function ($item) {
-                    return [$item->month => (int) $item->count];
+                    return [(int)$item->year . '-' . str_pad((int)$item->month, 2, '0', STR_PAD_LEFT) => (int) $item->count];
                 })
                 ->toArray();
 
