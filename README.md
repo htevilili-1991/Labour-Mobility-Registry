@@ -378,7 +378,9 @@ Contributions must adhere to **PSR-12** for **Laravel** (PHP) and **ESLint** wit
 ## **License**
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
-## **Screenshots**
+## **Screenshots** 
+
+NOTE: All data on these screenshots are dummy data
 
 ### Core Interface
 **Login Screen**
