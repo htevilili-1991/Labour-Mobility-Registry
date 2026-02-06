@@ -434,15 +434,16 @@ NOTE: All data on these screenshots are dummy data
 **Roles & Permissions**
 <img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/0aef4108-1a7c-4a28-80ec-0d149e727796" />
 
+**Roles Management**
+<img width="1912" height="1157" alt="image" src="https://github.com/user-attachments/assets/f30d4660-f828-47cf-ad41-cafc7eb8bf1d" />
+<img width="1912" height="1157" alt="image" src="https://github.com/user-attachments/assets/66a732d8-0c94-4af4-97cb-5117234fc313" />
+
+**Permissions Management**
+<img width="1912" height="1157" alt="image" src="https://github.com/user-attachments/assets/1dca987d-3633-45ab-84a6-9e47390b46ac" />
+<img width="1912" height="1157" alt="image" src="https://github.com/user-attachments/assets/44b3bf05-94fc-46a0-976c-093742fc7029" />
+
 **Reports Analytics**
 <img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/4939b5ef-f90e-41ce-a44e-4c364d13e9a4" />
-
-<!--### Theme & Appearance-->
-<!--**Light Theme Interface**-->
-<!-- Add light theme screenshot here -->
-
-<!--**Dark Theme Interface**-->
-<!-- Add dark theme screenshot here -->
 
 ## **Contact**
 For support or inquiries, contact the **Vanuatu Labour Registry** development team:
