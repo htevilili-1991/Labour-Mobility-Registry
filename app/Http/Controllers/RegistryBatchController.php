@@ -31,7 +31,7 @@ class RegistryBatchController extends Controller
         $batchTypes = ['inbound', 'outbound', 'earnings', 'returns'];
         $statuses = ['draft', 'submitted', 'under_review', 'approved', 'rejected'];
 
-        return Inertia::render('Batches/Index', [
+        return Inertia::render('batches/Index', [
             'batches' => $batches,
             'filters' => [
                 'scheme' => $request->scheme,
@@ -49,7 +49,7 @@ class RegistryBatchController extends Controller
         $schemes = ['RSE', 'SWP', 'PALM'];
         $batchTypes = ['inbound', 'outbound', 'earnings', 'returns'];
 
-        return Inertia::render('Batches/Create', [
+        return Inertia::render('batches/Create', [
             'schemes' => $schemes,
             'batchTypes' => $batchTypes,
         ]);
@@ -85,7 +85,7 @@ class RegistryBatchController extends Controller
     {
         $batch->load(['submittedBy', 'verifiedBy', 'approvedBy', 'registryEntries']);
 
-        return Inertia::render('Batches/Show', [
+        return Inertia::render('batches/Show', [
             'batch' => $batch,
             'registryEntries' => $batch->registryEntries,
         ]);
@@ -100,7 +100,7 @@ class RegistryBatchController extends Controller
         $schemes = ['RSE', 'SWP', 'PALM'];
         $batchTypes = ['inbound', 'outbound', 'earnings', 'returns'];
 
-        return Inertia::render('Batches/Edit', [
+        return Inertia::render('batches/Edit', [
             'batch' => $batch,
             'schemes' => $schemes,
             'batchTypes' => $batchTypes,

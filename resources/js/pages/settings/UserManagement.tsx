@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Head, usePage, useForm, Link } from '@inertiajs/react';
-import HeadingSmall from '@/components/heading-small';
-import { type BreadcrumbItem, type SharedData } from '@/types';
-import AppLayout from '@/layouts/app-layout';
-import SettingsLayout from '@/layouts/settings/layout';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { useInitials } from '@/hooks/use-initials';
+import { type BreadcrumbItem, type User, type SharedData } from '@/types';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { HeadingSmall } from '@/components/heading-small';
+import DeleteUser from '@/components/delete-user';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -70,17 +71,18 @@ export default function UserManagement() {
         });
     };
 
-    const handleDelete = (userId: number) => {
-        console.log('Delete button clicked for userId:', userId);
-        formDelete(`/settings/users/${userId}`, { // Updated to use formDelete
-            onSuccess: () => {
-                console.log(`Deleted user ${userId}`);
+    const handleDelete = (userId: number, userName: string) => {
+        console.log('Delete button clicked for userId:', userId, 'userName:', userName);
+        DeleteUser.show({
+            userId,
+            userName,
+            onConfirm: () => {
+                console.log(`Deleted user ${userId} (${userName})`);
                 window.location.reload();
             },
-            onError: (err: Record<string, string>) => {
-                console.error('Delete Errors:', err);
-                alert(Object.values(err).join(', ') || 'Failed to delete user');
-            },
+            onCancel: () => {
+                console.log('Delete cancelled for user:', userId);
+            }
         });
     };
 

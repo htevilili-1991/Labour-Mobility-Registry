@@ -1,9 +1,13 @@
-import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, type User } from '@/types';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { useInitials } from '@/hooks/use-initials';
+import { type BreadcrumbItem, type User, type SharedData } from '@/types';
+import React, { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import { HeadingSmall } from '@/components/heading-small';
+import DeleteUser from '@/components/delete-user';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -187,9 +191,16 @@ export default function BatchIndex({ auth, batches, filters, schemes, batchTypes
                                                                 variant="outline" 
                                                                 size="sm"
                                                                 onClick={() => {
-                                                                    if (confirm('Are you sure you want to delete this batch?')) {
-                                                                        router.delete(`/batches/${batch.id}`);
-                                                                    }
+                                                                    DeleteUser.show({
+                                                                        id: batch.id,
+                                                                        name: batch.name,
+                                                                        onConfirm: () => {
+                                                                            router.delete(`/batches/${batch.id}`);
+                                                                        },
+                                                                        onCancel: () => {
+                                                                            console.log('Delete cancelled for batch:', batch.id);
+                                                                        }
+                                                                    });
                                                                 }}
                                                             >
                                                                 Delete

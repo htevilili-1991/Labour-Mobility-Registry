@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, type User, type RegistryAuditValues, type SharedData } from '@/types';
-import { PaginatedResponse } from '@/types';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from '@tanstack/react-table';
+import { useInitials } from '@/hooks/use-initials';
+import { type BreadcrumbItem, type User, type SharedData } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { HeadingSmall } from '@/components/heading-small';
+import DeleteUser from '@/components/delete-user';
 
 interface Audit {
     id: number;
@@ -44,18 +46,18 @@ export default function Audits({ audits }: Props) {
     }, [flashMessage]);
 
     const handleClearLogs = () => {
-        if (window.confirm('Are you sure you want to clear all audit logs? This action cannot be undone.')) {
-            router.delete('/audits', {
-                onSuccess: () => {
-                    setAlertMessage('Audit logs cleared successfully.');
-                    setShowAlert(true);
-                },
-                onError: () => {
-                    setAlertMessage('Failed to clear audit logs.');
-                    setShowAlert(true);
-                },
-            });
-        }
+        DeleteUser.show({
+            id: 0, // Use 0 as a special ID for system action
+            name: 'All Audit Logs',
+            onConfirm: () => {
+                setAlertMessage('Audit logs cleared successfully.');
+                setShowAlert(true);
+                router.delete('/audits');
+            },
+            onCancel: () => {
+                console.log('Clear audit logs cancelled');
+            }
+        });
     };
 
     const columns: ColumnDef<Audit>[] = React.useMemo(

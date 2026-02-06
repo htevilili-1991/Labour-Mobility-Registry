@@ -9,8 +9,8 @@ import { UserInfo } from '@/components/user-info';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Menu } from 'lucide-react';
+import { Link, usePage, router } from '@inertiajs/react';
+import { BookOpen, Folder, LayoutGrid, Menu, RefreshCw } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 
@@ -44,6 +44,10 @@ interface AppHeaderProps {
 export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const page = usePage<SharedData>();
     const { auth } = page.props;
+
+    const handleRefresh = () => {
+        router.reload();
+    };
     
     return (
         <>
@@ -158,6 +162,15 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 <UserMenuContent user={auth.user} />
                             </DropdownMenuContent>
                         </DropdownMenu>
+
+                        {/* Refresh Button */}
+                        <button 
+                            onClick={handleRefresh} 
+                            className="relative p-2 rounded-lg hover:bg-blue-100 transition-colors"
+                            title="Refresh content"
+                        >
+                            <RefreshCw className="w-5 h-5 text-gray-600" />
+                        </button>
                     </div>
                 </div>
             </div>

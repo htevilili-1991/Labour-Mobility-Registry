@@ -146,9 +146,6 @@ class RegistryController extends Controller
                 ],
                 'distinctYears' => $distinctYears,
                 'draftBatches' => $draftBatches,
-                'auth' => [
-                    'user' => auth()->user() ? auth()->user()->only(['id', 'name', 'email', 'avatar']) : null,
-                ],
             ]);
         } catch (\Exception $e) {
             Log::error('Error fetching registry data', [
@@ -270,9 +267,6 @@ class RegistryController extends Controller
     {
         try {
             return Inertia::render('registry/create', [
-                'auth' => [
-                    'user' => auth()->user() ? auth()->user()->only(['id', 'name', 'email', 'avatar']) : null,
-                ],
             ]);
         } catch (\Exception $e) {
             Log::error('Error rendering create form: '.$e->getMessage());
@@ -333,9 +327,6 @@ class RegistryController extends Controller
 
             return Inertia::render('registry/show', [
                 'registry' => $registry,
-                'auth' => [
-                    'user' => auth()->user() ? auth()->user()->only(['id', 'name', 'email', 'avatar']) : null,
-                ],
             ]);
         } catch (\Exception $e) {
             Log::error('Error fetching registry record: '.$e->getMessage());
@@ -356,9 +347,6 @@ class RegistryController extends Controller
 
             return Inertia::render('registry/edit', [
                 'registry' => $registry,
-                'auth' => [
-                    'user' => auth()->user() ? auth()->user()->only(['id', 'name', 'email', 'avatar']) : null,
-                ],
             ]);
         } catch (\Exception $e) {
             Log::error('Error fetching registry record for edit: '.$e->getMessage());
@@ -438,9 +426,6 @@ class RegistryController extends Controller
     {
         try {
             return Inertia::render('registry/upload', [
-                'auth' => [
-                    'user' => auth()->user() ? auth()->user()->only(['id', 'name', 'email', 'avatar']) : null,
-                ],
             ]);
         } catch (\Exception $e) {
             Log::error('Error rendering CSV upload form: '.$e->getMessage());
@@ -555,9 +540,6 @@ class RegistryController extends Controller
     {
         try {
             return Inertia::render('registry/upload-wizard', [
-                'auth' => [
-                    'user' => auth()->user() ? auth()->user()->only(['id', 'name', 'email', 'avatar']) : null,
-                ],
             ]);
         } catch (\Exception $e) {
             Log::error('Error rendering upload wizard: '.$e->getMessage());

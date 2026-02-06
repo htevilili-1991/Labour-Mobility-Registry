@@ -106,7 +106,7 @@ class DashboardController extends Controller
                 'recent_records_count' => count($recentRecords),
             ]);
 
-            return Inertia::render('Dashboard', [
+            return Inertia::render('dashboard', [
                 'metrics' => [
                     'total_records' => (int) $totalRecords,
                     'records_this_month' => (int) $recordsThisMonth,
@@ -116,14 +116,11 @@ class DashboardController extends Controller
                 'travel_reason_records' => $travelReasonRecords,
                 'sex_records' => $sexRecords,
                 'recent_records' => $recentRecords,
-                'auth' => [
-                    'user' => auth()->check() ? auth()->user()->only(['name', 'email']) : null,
-                ],
             ]);
         } catch (\Exception $e) {
             Log::error('Error fetching dashboard data: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
 
-            return Inertia::render('Dashboard', [
+            return Inertia::render('dashboard', [
                 'metrics' => [
                     'total_records' => 0,
                     'records_this_month' => 0,
@@ -134,9 +131,6 @@ class DashboardController extends Controller
                 'sex_records' => [],
                 'recent_records' => [],
                 'error' => 'Unable to load dashboard data: '.$e->getMessage(),
-                'auth' => [
-                    'user' => auth()->check() ? auth()->user()->only(['name', 'email']) : null,
-                ],
             ]);
         }
     }

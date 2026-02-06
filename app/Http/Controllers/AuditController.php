@@ -28,10 +28,7 @@ class AuditController extends Controller
                 ];
             });
 
-        return Inertia::render('Audits/Index', [
-            'auth' => [
-                'user' => auth()->user() ? auth()->user()->only(['id', 'name', 'email', 'avatar']) : null,
-            ],
+        return Inertia::render('audits/index', [
             'audits' => [
                 'data' => $audits->items(),
                 'links' => $audits->links()->toHtml(),

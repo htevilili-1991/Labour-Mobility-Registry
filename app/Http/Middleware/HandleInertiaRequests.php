@@ -39,12 +39,26 @@ class HandleInertiaRequests extends Middleware
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
+        // Force fresh user data with debugging and cache busting
+        $user = null;
+        if ($request->user()) {
+            $user = \App\Models\User::find($request->user()->id);
+            // Debug: Log the emoji value
+            \Log::info('User data for header', [
+                'user_id' => $user->id,
+                'profile_emoji' => $user->profile_emoji,
+                'name' => $user->name,
+                'timestamp' => now()->toDateTimeString(),
+            ]);
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user() ? \App\Models\User::find($request->user()->id) : null,
+                'user' => $user,
+                'cache_bust' => now()->timestamp, // Force re-render
             ],
             'ziggy' => fn (): array => [
                 ...(new Ziggy)->toArray(),
