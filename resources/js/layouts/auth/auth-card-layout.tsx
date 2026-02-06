@@ -1,34 +1,31 @@
-import AppLogoIcon from '@/components/app-logo-icon';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from '@inertiajs/react';
-import { type PropsWithChildren } from 'react';
-
-export default function AuthCardLayout({
-    children,
-    title,
-    description,
-}: PropsWithChildren<{
-    name?: string;
-    title?: string;
+interface AuthCardLayoutProps {
+    title: string;
     description?: string;
-}>) {
-    return (
-        <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-            <div className="flex w-full max-w-md flex-col gap-6">
-                <Link href={route('home')} className="flex items-center gap-2 self-center font-medium text-gray-800">
-                    <div className="flex h-9 w-9 items-center justify-center">
-                        <AppLogoIcon className="size-9 fill-current text-blue-600" />
-                    </div>
-                </Link>
+    children: React.ReactNode;
+}
 
-                <div className="flex flex-col gap-6">
-                    <Card className="rounded-xl shadow-lg border-gray-200 bg-white">
-                        <CardHeader className="px-10 pt-8 pb-0 text-center">
-                            <CardTitle className="text-xl text-gray-800">{title}</CardTitle>
-                            <CardDescription className="text-gray-600">{description}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="px-10 py-8">{children}</CardContent>
-                    </Card>
+export default function AuthCardLayout({ title, description, children }: AuthCardLayoutProps) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50 p-4">
+            <div className="w-full max-w-md">
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+                    {/* Logo Section */}
+                    <div className="flex justify-center mb-8">
+                        <div className="w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg">
+                            <span className="text-white text-2xl font-bold">LMR</span>
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="space-y-6">
+                        <div className="text-center">
+                            <h1 className="text-2xl font-bold text-gray-900 mb-2">{title}</h1>
+                            {description && (
+                                <p className="text-gray-600">{description}</p>
+                            )}
+                        </div>
+                        {children}
+                    </div>
                 </div>
             </div>
         </div>

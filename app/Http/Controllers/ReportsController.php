@@ -316,6 +316,7 @@ class ReportsController extends Controller
                 $groupedData[$periodKey] = [
                     'period' => $periodKey,
                     'total' => 0,
+                    'draft' => 0,
                     'submitted' => 0,
                     'under_review' => 0,
                     'approved' => 0,

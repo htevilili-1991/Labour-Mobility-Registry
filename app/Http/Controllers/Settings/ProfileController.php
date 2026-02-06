@@ -48,6 +48,9 @@ class ProfileController extends Controller
 
         $request->user()->save();
 
+        // Refresh the user session to get updated data
+        auth()->user()->refresh();
+
         return redirect()->route('settings.profile')->with('success', 'Profile updated.');
     }
 

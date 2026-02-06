@@ -1,4 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type User } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 interface RegistryEntry {
     id: number;
@@ -46,6 +49,12 @@ interface RegistryBatch {
     approvedBy?: { id: number; name: string; email: string } | null;
 }
 
+interface Discrepancy {
+    description: string;
+    found_at: string;
+    found_by: string;
+}
+
 interface Approval {
     id: number;
     action: string;
@@ -75,6 +84,12 @@ interface Props {
 }
 
 export default function VerificationShow({ auth, batch, registryEntries, approvals, auditTrail }: Props) {
+    const [showDiscrepancyModal, setShowDiscrepancyModal] = useState(false);
+    const [newDiscrepancy, setNewDiscrepancy] = useState('');
+    const [discrepancies, setDiscrepancies] = useState<any[]>([]);
+    const [verificationNotes, setVerificationNotes] = useState(batch.verification_notes || '');
+    const [verificationProcessing, setVerificationProcessing] = useState(false);
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'submitted': return 'bg-blue-100 text-blue-800';
@@ -97,7 +112,7 @@ export default function VerificationShow({ auth, batch, registryEntries, approva
     };
 
     // Verification form
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post } = useForm({
         notes: '',
         discrepancies: [] as Array<{ description: string; severity: string }>,
         checklist: [
@@ -111,32 +126,59 @@ export default function VerificationShow({ auth, batch, registryEntries, approva
     });
 
     const handleVerify = () => {
-        post(`/verification/${batch.id}/verify`);
+        setVerificationProcessing(true);
+        router.post(`/verification/${batch.id}/verify`, {
+            verification_notes: verificationNotes,
+            discrepancies: discrepancies,
+        });
     };
 
     const handleApprove = () => {
-        post(`/verification/${batch.id}/approve`);
+        setVerificationProcessing(true);
+        router.post(`/verification/${batch.id}/approve`, {
+            verification_notes: verificationNotes,
+            discrepancies: discrepancies,
+        });
     };
 
     const handleReject = () => {
         const reason = prompt('Please provide rejection reason:');
         if (reason && reason.trim().length >= 10) {
-            router.post(`/verification/${batch.id}/reject`, { reason });
+            setVerificationProcessing(true);
+            router.post(`/verification/${batch.id}/reject`, { 
+                reason,
+                verification_notes: verificationNotes,
+                discrepancies: discrepancies,
+            });
         }
     };
 
     const addDiscrepancy = () => {
-        const description = prompt('Describe the discrepancy:');
-        if (description) {
-            setData('discrepancies', [
-                ...data.discrepancies,
-                { description, severity: 'medium' }
-            ]);
+        setShowDiscrepancyModal(true);
+        setNewDiscrepancy('');
+    };
+
+    const handleAddDiscrepancy = () => {
+        if (newDiscrepancy.trim()) {
+            // Create a simple discrepancy object
+            const discrepancyEntry = {
+                description: newDiscrepancy.trim(),
+                found_at: new Date().toISOString(),
+                found_by: auth.user?.name || 'Unknown',
+            };
+            
+            // Add to local discrepancies state
+            setDiscrepancies([...discrepancies, discrepancyEntry]);
+            
+            setShowDiscrepancyModal(false);
+            setNewDiscrepancy('');
         }
     };
 
     const removeDiscrepancy = (index: number) => {
-        setData('discrepancies', data.discrepancies.filter((_, i) => i !== index));
+        const updatedDiscrepancies = [...discrepancies];
+        updatedDiscrepancies.splice(index, 1);
+        setDiscrepancies(updatedDiscrepancies);
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -305,7 +347,7 @@ export default function VerificationShow({ auth, batch, registryEntries, approva
                                         </Button>
                                     </div>
                                     <div className="space-y-2">
-                                        {data.discrepancies.map((discrepancy, index) => (
+                                        {discrepancies.map((discrepancy, index) => (
                                             <div key={index} className="flex items-center justify-between p-2 border rounded">
                                                 <span>{discrepancy.description}</span>
                                                 <Button
@@ -318,14 +360,14 @@ export default function VerificationShow({ auth, batch, registryEntries, approva
                                                 </Button>
                                             </div>
                                         ))}
-                                        {data.discrepancies.length === 0 && (
+                                        {discrepancies.length === 0 && (
                                             <p className="text-gray-500 text-sm">No discrepancies recorded</p>
                                         )}
                                     </div>
                                 </div>
 
-                                <Button type="submit" disabled={processing}>
-                                    {processing ? 'Verifying...' : 'Complete Verification'}
+                                <Button type="submit" disabled={verificationProcessing}>
+                                    {verificationProcessing ? 'Verifying...' : 'Complete Verification'}
                                 </Button>
                             </form>
                         </CardContent>
@@ -412,6 +454,46 @@ export default function VerificationShow({ auth, batch, registryEntries, approva
                     </Card>
                 )}
             </div>
+
+            {/* Add Discrepancy Modal */}
+            <Dialog open={showDiscrepancyModal} onOpenChange={setShowDiscrepancyModal}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Add Discrepancy</DialogTitle>
+                        <DialogDescription>
+                            Enter details about the discrepancy found during verification.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="discrepancy-description">Description</Label>
+                            <Input
+                                id="discrepancy-description"
+                                value={newDiscrepancy}
+                                onChange={(e) => setNewDiscrepancy(e.target.value)}
+                                placeholder="Describe discrepancy found..."
+                                className="min-h-[100px]"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setShowDiscrepancyModal(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={handleAddDiscrepancy}
+                            disabled={!newDiscrepancy.trim()}
+                        >
+                            Add Discrepancy
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

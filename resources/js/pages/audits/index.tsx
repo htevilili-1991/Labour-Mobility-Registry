@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, type User, type RegistryAuditValues } from '@/types';
+import { type BreadcrumbItem, type User, type RegistryAuditValues, type SharedData } from '@/types';
 import { PaginatedResponse } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from '@tanstack/react-table';
@@ -19,9 +19,6 @@ interface Audit {
 }
 
 interface Props {
-    auth: {
-        user: User | null;
-    };
     audits: PaginatedResponse<Audit>;
 }
 
@@ -30,11 +27,13 @@ const breadcrumbs: BreadcrumbItem[] = [
     { label: 'Audit Logs', href: '/audits' },
 ];
 
-const AuditIndex: React.FC<Props> = ({ auth, audits: initialAudits }) => {
+export default function Audits({ audits }: Props) {
+    const { auth } = usePage<SharedData>().props;
     const { flash } = usePage<{ flash?: { success?: string; error?: string } }>().props;
     const flashMessage = flash?.success || flash?.error;
     const [showAlert, setShowAlert] = useState(!!flashMessage);
     const [alertMessage, setAlertMessage] = useState<string | null>(flashMessage || null);
+    const [auditsData, setAuditsData] = useState(audits);
 
     useEffect(() => {
         if (flashMessage) {
@@ -89,17 +88,17 @@ const AuditIndex: React.FC<Props> = ({ auth, audits: initialAudits }) => {
     );
 
     const table = useReactTable<Audit>({
-        data: initialAudits.data || [],
+        data: auditsData.data || [],
         columns,
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getCoreRowModel(),
         manualSorting: true,
         manualPagination: true,
-        pageCount: initialAudits.meta.last_page,
+        pageCount: auditsData.meta.last_page,
         initialState: {
             pagination: {
-                pageIndex: initialAudits.meta.current_page - 1,
-                pageSize: initialAudits.meta.per_page,
+                pageIndex: auditsData.meta.current_page - 1,
+                pageSize: auditsData.meta.per_page,
             },
         },
         state: {
@@ -131,7 +130,7 @@ const AuditIndex: React.FC<Props> = ({ auth, audits: initialAudits }) => {
                         </button>
                     </Alert>
                 )}
-                {initialAudits.data.length === 0 ? (
+                {auditsData.data.length === 0 ? (
                     <div className="text-center py-8">
                         <svg
                             className="mx-auto h-12 w-12 text-gray-400"
@@ -244,6 +243,4 @@ const AuditIndex: React.FC<Props> = ({ auth, audits: initialAudits }) => {
             </div>
         </AppLayout>
     );
-};
-
-export default AuditIndex;
+}

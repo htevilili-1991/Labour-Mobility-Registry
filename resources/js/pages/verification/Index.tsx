@@ -83,58 +83,96 @@ export default function VerificationIndex({ auth, batches, filters, schemes, bat
     return (
         <AppLayout breadcrumbs={breadcrumbs} auth={auth}>
             <Head title="Batch Verification" />
-            <div className="flex flex-col gap-4 p-4">
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h1 className="text-2xl font-bold">Batch Verification</h1>
-                        <p className="text-gray-600">Review and approve registry batches submitted by VBoS</p>
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+                {/* Header Section */}
+                <div className="mb-8">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                Batch Verification
+                            </h1>
+                            <p className="text-gray-600 mt-2">Review and approve registry batches submitted by VBoS</p>
+                        </div>
+                        <Link href="/verification/dashboard">
+                            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300">
+                                Dashboard
+                            </Button>
+                        </Link>
                     </div>
-                    <Link href="/verification/dashboard">
-                        <Button variant="outline">Dashboard</Button>
-                    </Link>
                 </div>
 
-                {/* Quick Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-600">Pending Verification</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-blue-600">
-                                {batches.filter(b => b.status === 'submitted').length}
+                {/* Enhanced Quick Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-blue-100 text-sm font-medium mb-1">Pending Verification</p>
+                                    <div className="text-3xl font-bold">
+                                        {batches.filter(b => b.status === 'submitted').length}
+                                    </div>
+                                    <p className="text-blue-100 text-xs mt-2">Awaiting review</p>
+                                </div>
+                                <div className="bg-white/20 p-3 rounded-full">
+                                    <div className="w-6 h-6 bg-white rounded-full"></div>
+                                </div>
                             </div>
                         </CardContent>
+                        <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mb-16"></div>
                     </Card>
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-600">Under Review</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-yellow-600">
-                                {batches.filter(b => b.status === 'under_review').length}
+
+                    <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-yellow-500 to-yellow-600 text-white">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-yellow-100 text-sm font-medium mb-1">Under Review</p>
+                                    <div className="text-3xl font-bold">
+                                        {batches.filter(b => b.status === 'under_review').length}
+                                    </div>
+                                    <p className="text-yellow-100 text-xs mt-2">In progress</p>
+                                </div>
+                                <div className="bg-white/20 p-3 rounded-full">
+                                    <div className="w-6 h-6 bg-white rounded-full"></div>
+                                </div>
                             </div>
                         </CardContent>
+                        <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mb-16"></div>
                     </Card>
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-600">Approved</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-green-600">
-                                {batches.filter(b => b.status === 'approved').length}
+
+                    <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-green-500 to-green-600 text-white">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-green-100 text-sm font-medium mb-1">Approved</p>
+                                    <div className="text-3xl font-bold">
+                                        {batches.filter(b => b.status === 'approved').length}
+                                    </div>
+                                    <p className="text-green-100 text-xs mt-2">Completed</p>
+                                </div>
+                                <div className="bg-white/20 p-3 rounded-full">
+                                    <div className="w-6 h-6 bg-white rounded-full"></div>
+                                </div>
                             </div>
                         </CardContent>
+                        <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mb-16"></div>
                     </Card>
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-600">Rejected</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-red-600">
-                                {batches.filter(b => b.status === 'rejected').length}
+
+                    <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-red-500 to-red-600 text-white">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-red-100 text-sm font-medium mb-1">Rejected</p>
+                                    <div className="text-3xl font-bold">
+                                        {batches.filter(b => b.status === 'rejected').length}
+                                    </div>
+                                    <p className="text-red-100 text-xs mt-2">Not approved</p>
+                                </div>
+                                <div className="bg-white/20 p-3 rounded-full">
+                                    <div className="w-6 h-6 bg-white rounded-full"></div>
+                                </div>
                             </div>
                         </CardContent>
+                        <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mb-16"></div>
                     </Card>
                 </div>
 

@@ -1,7 +1,7 @@
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Transition } from '@headlessui/react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useState } from 'react';
 
 import DeleteUser from '@/components/delete-user';
 import HeadingSmall from '@/components/heading-small';
@@ -11,6 +11,54 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+
+const emojis = [
+    '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '😉', '😊', '😇',
+    '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪', '😝',
+    '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄',
+    '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮',
+    '🤧', '🥵', '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐',
+    '😕', '😟', '🙁', '☹️', '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨',
+    '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞', '😩', '😫', '🥱', '😤',
+    '😡', '😠', '🤬', '😈', '👿', '💀', '☠️', '💩', '🤡', '👹', '👺', '👻',
+    '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿',
+    '😾', '🙈', '🙉', '🙊', '💋', '💌', '💘', '💝', '💖', '💗', '💓',
+    '💞', '💕', '💟', '❣️', '💔', '❤️', '🧡', '💛', '💚', '💙', '💜', '🤎',
+    '🖤', '🤍', '💯', '💢', '💥', '💫', '💦', '💨', '🕳️', '💣', '💬', '👁️‍🗨️', '🗨️',
+    '🗯', '💭', '💤', '👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️',
+    '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '👇', '☝️', '👍', '👎', '👊',
+    '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪',
+    '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃', '👣', '👀', '👁️', '👅', '👄',
+    '💋', '🦷', '🦴', '👶', '🧒', '👦', '👧', '🧑', '👱', '👨', '🧔', '👩', '🧓',
+    '👴', '👵', '🙍', '🙎', '🙅', '🙆', '💁', '🙋', '🧏', '🙇', '🤦', '🤷',
+    '👨‍⚕️', '👩‍⚕️', '🧑‍⚕️', '👨‍🎓', '👩‍🎓', '🧑‍🎓', '👨‍🏫', '👩‍🏫', '🧑‍🏫',
+    '👨‍⚖️', '👩‍⚖️', '🧑‍⚖️', '👨‍🌾', '👩‍🌾', '🧑‍🌾', '👨‍🍳', '👩‍🍳', '🧑‍🍳',
+    '👨‍🔧', '👩‍🔧', '🧑‍🔧', '👨‍🏭', '👩‍🏭', '🧑‍🏭', '👨‍💼', '👩‍💼', '🧑‍💼',
+    '👨‍🔬', '👩‍🔬', '🧑‍🔬', '👨‍💻', '👩‍💻', '🧑‍💻', '👨‍🎤', '👩‍🎤', '🧑‍🎤',
+    '👨‍🎨', '👩‍🎨', '🧑‍🎨', '👨‍✈️', '👩‍✈️', '🧑‍✈️', '👨‍🚀', '👩‍🚀', '🧑‍🚀',
+    '👨‍🚒', '👩‍🚒', '🧑‍🚒', '👮', '👮‍♂️', '👮‍♀️', '👷', '👷‍♂️', '👷‍♀️',
+    '💂', '💂‍♂️', '💂‍♀️', '🕵️', '🕵️‍♂️', '🕵️‍♀️', '👩‍🦰', '👨‍🦰', '🧑‍🦰',
+    '👩‍🦱', '👨‍🦱', '🧑‍🦱', '👩‍🦳', '👨‍🦳', '🧑‍🦳', '🦱', '🦳', '👨‍🦲',
+    '👩‍🦲', '🧑‍🦲', '🧔‍♂️', '🧔‍♀️', '👱‍♂️', '👱‍♀️', '👨‍🦱', '👩‍🦱', '🧑‍🦱',
+    '👨‍🦰', '👩‍🦰', '🧑‍🦰', '👨‍🦳', '👩‍🦳', '🧑‍🦳', '🦲', '👱', '👨', '👩',
+    '🧑', '👱‍♂️', '👱‍♀️', '👨‍🦱', '👩‍🦱', '🧑‍🦱', '👨‍🦰', '👩‍🦰', '🧑‍🦰',
+    '👨‍🦳', '👩‍🦳', '🧑‍🦳', '🦲', '👱', '👨', '👩', '🧑', '👱‍♂️', '👱‍♀️',
+    '👨‍🦱', '👩‍🦱', '🧑‍🦱', '👨‍🦰', '👩‍🦰', '🧑‍🦰', '👨‍🦳', '👩‍🦳', '🧑‍🦳',
+    '🦲', '👱', '👨', '👩', '🧑', '👶', '🧒', '👦', '👧', '🧑', '👱', '👨',
+    '🧔', '👩', '🧓', '👴', '👵', '🙍', '🙎', '🙅', '🙆', '💁', '🙋', '🧏',
+    '🙇', '🤦', '🤷', '👨‍⚕️', '👩‍⚕️', '🧑‍⚕️', '👨‍🎓', '👩‍🎓', '🧑‍🎓',
+    '👨‍🏫', '👩‍🏫', '🧑‍🏫', '👨‍⚖️', '👩‍⚖️', '🧑‍⚖️', '👨‍🌾', '👩‍🌾', '🧑‍🌾',
+    '👨‍🍳', '👩‍🍳', '🧑‍🍳', '👨‍🔧', '👩‍🔧', '🧑‍🔧', '👨‍🏭', '👩‍🏭', '🧑‍🏭',
+    '👨‍💼', '👩‍💼', '🧑‍💼', '👨‍🔬', '👩‍🔬', '🧑‍🔬', '👨‍💻', '👩‍💻', '🧑‍💻',
+    '👨‍🎤', '👩‍🎤', '🧑‍🎤', '👨‍🎨', '👩‍🎨', '🧑‍🎨', '👨‍✈️', '👩‍✈️', '🧑‍✈️',
+    '👨‍🚀', '👩‍🚀', '🧑‍🚀', '👨‍🚒', '👩‍🚒', '🧑‍🚒', '👮', '👮‍♂️', '👮‍♀️',
+    '👷', '👷‍♂️', '👷‍♀️', '💂', '💂‍♂️', '💂‍♀️', '🕵️', '🕵️‍♂️', '🕵️‍♀️',
+    '👩‍🦰', '👨‍🦰', '🧑‍🦰', '👩‍🦱', '👨‍🦱', '🧑‍🦱', '👩‍🦳', '👨‍🦳', '🧑‍🦳',
+    '🦱', '🦳', '👨‍🦲', '👩‍🦲', '🧑‍🦲', '🧔‍♂️', '🧔‍♀️', '👱‍♂️', '👱‍♀️',
+    '👨‍🦱', '👩‍🦱', '🧑‍🦱', '👨‍🦰', '👩‍🦰', '🧑‍🦰', '👨‍🦳', '👩‍🦳', '🧑‍🦳',
+    '🦲', '👱', '👨', '👩', '🧑', '👱‍♂️', '👱‍♀️', '👨‍🦱', '👩‍🦱', '🧑‍🦱',
+    '👨‍🦰', '👩‍🦰', '🧑‍🦰', '👨‍🦳', '👩‍🦳', '🧑‍🦳', '🦲', '👱', '👨', '👩', '🧑'
+];
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -22,19 +70,30 @@ const breadcrumbs: BreadcrumbItem[] = [
 type ProfileForm = {
     name: string;
     email: string;
+    profile_emoji: string;
 };
 
 export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
     const { auth } = usePage<SharedData>().props;
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-    const { data, setData, patch, errors, processing, recentlySuccessful } = useForm<Required<ProfileForm>>({
+    const { data, setData, post, errors, processing, recentlySuccessful } = useForm<ProfileForm>({
         name: auth.user.name,
         email: auth.user.email,
+        profile_emoji: auth.user.profile_emoji || '😊',
     });
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        patch(route('profile.update'), {
+        post(route('profile.update'), data, {
+            preserveScroll: true,
+        });
+    };
+
+    const selectEmoji = (emoji: string) => {
+        setData('profile_emoji', emoji);
+        setShowEmojiPicker(false);
+        post(route('profile.update'), { ...data, profile_emoji: emoji }, {
             preserveScroll: true,
         });
     };
@@ -44,7 +103,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
             <Head title="Profile settings" />
             <SettingsLayout>
                 <div className="space-y-6">
-                    <HeadingSmall title="Profile information" description="Update your name and email address" />
+                    <HeadingSmall title="Profile information" description="Update your name, email address, and profile emoji" />
                     <form onSubmit={submit} className="space-y-6">
                         <div className="grid gap-2">
                             <Label htmlFor="name">Name</Label>
@@ -72,6 +131,36 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 placeholder="Email address"
                             />
                             <InputError className="mt-2" message={errors.email} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="profile_emoji">Profile Emoji</Label>
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                    className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors w-full"
+                                >
+                                    <span className="text-2xl">{data.profile_emoji}</span>
+                                    <span className="text-sm text-gray-600">Choose emoji</span>
+                                </button>
+                                {showEmojiPicker && (
+                                    <div className="absolute z-50 mt-1 p-3 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto w-full">
+                                        <div className="grid grid-cols-8 gap-1">
+                                            {emojis.map((emoji, index) => (
+                                                <button
+                                                    key={index}
+                                                    type="button"
+                                                    onClick={() => selectEmoji(emoji)}
+                                                    className="p-1 hover:bg-gray-100 rounded text-xl transition-colors"
+                                                >
+                                                    {emoji}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <InputError className="mt-2" message={errors.profile_emoji} />
                         </div>
                         {mustVerifyEmail && auth.user.email_verified_at === null && (
                             <div>

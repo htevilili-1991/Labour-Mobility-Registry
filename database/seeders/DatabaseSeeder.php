@@ -13,11 +13,27 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Run role and permission seeder first
+        $this->call([
+            RolePermissionSeeder::class,
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Create users with roles
+        $this->call([
+            UserSeeder::class,
+        ]);
+
+        // Create additional regular users
+        User::factory(5)->create();
+
+        User::firstOrCreate(
+            ['email' => 'test@example.com'],
+            ['name' => 'Test User']
+        );
+
+        // Create registry and batch data
+        $this->call([
+            RegistrySeeder::class,
         ]);
     }
 }

@@ -76,11 +76,13 @@ class RolePermissionSeeder extends Seeder
                 'display_name' => 'Administrator',
                 'description' => 'Administrative access with most permissions',
                 'permissions' => [
-                    'registry.view', 'registry.create', 'registry.edit', 'registry.upload', 'registry.export',
-                    'users.view', 'users.edit', 'users.manage-roles',
-                    'roles.view',
-                    'reports.view', 'reports.create', 'reports.edit',
-                    'audits.view'
+                    'registry.view', 'registry.create', 'registry.edit', 'registry.upload', 'registry.export', 'registry.delete',
+                    'users.view', 'users.create', 'users.edit', 'users.manage-roles',
+                    'roles.view', 'roles.create', 'roles.edit', 'roles.delete',
+                    'permissions.view', 'permissions.create', 'permissions.edit', 'permissions.delete',
+                    'batches.view', 'batches.create', 'batches.edit', 'batches.submit', 'batches.verify', 'batches.approve', 'batches.reject', 'batches.audit',
+                    'reports.view', 'reports.create', 'reports.edit', 'reports.delete',
+                    'audits.view', 'audits.clear'
                 ]
             ],
             [
