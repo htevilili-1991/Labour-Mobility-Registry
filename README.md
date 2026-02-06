@@ -378,70 +378,71 @@ Contributions must adhere to **PSR-12** for **Laravel** (PHP) and **ESLint** wit
 ## **License**
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
-## **Screenshots**
+## **Screenshots** 
+
+NOTE: All data on these screenshots are dummy data
 
 ### Core Interface
 **Login Screen**
-<!-- Add login screenshot here -->
-<img width="1787" height="895" alt="Login Screen" src="https://github.com/user-attachments/assets/15d686ca-c513-4ca4-b24b-2d9b58b7b52b" />
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/c70d1e09-8b51-44c9-9f0c-5c9b19aa7417" />
 
 **Dashboard with Real-Time Analytics**
-<!-- Add dashboard screenshot here -->
-<img width="1870" height="955" alt="Dashboard" src="https://github.com/user-attachments/assets/296a19cc-898f-41bb-b9b9-ba645250516a" />
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/bb53f0e3-6102-45fa-a6c0-1c75f0368052" />
 
 ### Registry Management
 **Registry Data Table with Multi-Select**
-<!-- Add registry table with checkboxes screenshot here -->
-<img width="1870" height="955" alt="Registry Data Table" src="https://github.com/user-attachments/assets/d88a5796-3cad-4eb3-92bb-406fc5f918db" />
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/669251d4-8152-4bf4-8283-7911aa0447e9" />
 
 **Individual Record Edit Form**
-<!-- Add record edit screenshot here -->
-<img width="1874" height="910" alt="Edit Record" src="https://github.com/user-attachments/assets/3ca7ceab-6d89-4211-941a-88098f6fa5b2" />
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/baebcb7e-3128-4bec-8704-ca2e27addfa8" />
 
 ### CSV Upload Wizard
 **Step 1: File Selection with Drag-and-Drop**
-<!-- Add CSV upload step 1 screenshot here -->
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/a5b9cd43-c5d6-4da6-9a0c-dba75799ef41" />
 
 **Step 2: Real-Time Validation Results**
-<!-- Add CSV validation screenshot here -->
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/792f95ca-ab46-4aa6-9cf1-3fcaf6f74462" />
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/3ff22252-47bf-48ea-bafb-59e2165baab1" />
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/2b1e90ae-dac9-4a21-9af7-f94ccae9b874" />
 
 **Step 3: Field Mapping Interface**
-<!-- Add field mapping screenshot here -->
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/1a37da3e-ffa1-407c-a8df-b94a7a1bd62e" />
 
 **Step 4: Batch Creation with Smart Defaults**
-<!-- Add batch creation screenshot here -->
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/2952de6c-3d78-4440-91e6-6becdf59f18c" />
 
 ### Batch Management
 **Batch List with Filtering**
-<!-- Add batch list screenshot here -->
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/8ebaa6c7-b264-4ce4-8af8-aae136d2d447" />
 
 **Batch Detail View with Registry Entries**
-<!-- Add batch detail screenshot here -->
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/ca1b1c68-f1ca-4050-8c0e-928191409b2d" />
 
 **Bulk Operations Interface**
-<!-- Add bulk operations screenshot here -->
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/ec280247-d1ae-4700-8ffe-7b8945534479" />
 
 ### Verification & Administration
 **Verification Dashboard**
-<!-- Add verification dashboard screenshot here -->
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/281678dc-d060-4df0-ac67-e554d21d7f54" />
+<img width="1870" height="955" alt="User Management" src="https://github.com/user-attachments/assets/a7efe7df-a2c1-4672-8484-1ec1ba5c3cd6" />
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/518eb428-49c5-433e-816c-44349fcf6b78" />
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/df82ebc6-756e-46d6-937d-97ece6f3d74c" />
 
 **User Management Interface**
-<!-- Add user management screenshot here -->
-<img width="1870" height="955" alt="User Management" src="https://github.com/user-attachments/assets/a7efe7df-a2c1-4672-8484-1ec1ba5c3cd6" />
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/cab3238b-da2e-49b9-8765-54b2b8ebb669" />
+
+**Roles & Permissions**
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/0aef4108-1a7c-4a28-80ec-0d149e727796" />
 
 **Reports Analytics**
-<!-- Add reports screenshot here -->
+<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/4939b5ef-f90e-41ce-a44e-4c364d13e9a4" />
 
-### Theme & Appearance
-**Light Theme Interface**
+<!--### Theme & Appearance-->
+<!--**Light Theme Interface**-->
 <!-- Add light theme screenshot here -->
 
-**Dark Theme Interface**
+<!--**Dark Theme Interface**-->
 <!-- Add dark theme screenshot here -->
-
-**Theme Toggle Component**
-<!-- Add theme toggle screenshot here -->
-
 
 ## **Contact**
 For support or inquiries, contact the **Vanuatu Labour Registry** development team:
