@@ -126,7 +126,7 @@ class ProfileController extends Controller
             ];
         });
 
-        return Inertia::render('Settings/usermanagement', [
+        return Inertia::render('settings/UserManagement', [
             'users' => $users,
         ]);
     }
