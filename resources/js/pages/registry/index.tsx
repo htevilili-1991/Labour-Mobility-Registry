@@ -9,7 +9,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DownloadIcon, ChevronDownIcon, PlusIcon, Trash2Icon } from 'lucide-react';
+import { DownloadIcon, ChevronDownIcon, PlusIcon, Trash2Icon, FileText, Upload } from 'lucide-react';
+import { PageHeader } from '@/components/page-header';
+import { EmptyState } from '@/components/empty-state';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
@@ -530,7 +532,7 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
     return (
         <AppLayout breadcrumbs={breadcrumbs} auth={auth}>
             <Head title="Registry" />
-            <div className="relative flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+            <div className="relative flex h-full flex-1 flex-col gap-6 rounded-xl p-6">
                 {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-50 z-10">
                         <svg className="animate-spin h-8 w-8 text-blue-500" viewBox="0 0 24 24">
@@ -563,6 +565,18 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                         </button>
                     </Alert>
                 )}
+                <PageHeader
+                    title="Registry"
+                    description="View, search, and manage all registry entries. Use bulk actions to add entries to batches or export data."
+                    actions={
+                        <Link href="/registry/upload-wizard">
+                            <Button className="gap-2">
+                                <Upload className="h-4 w-4" />
+                                Upload Data
+                            </Button>
+                        </Link>
+                    }
+                />
                 {/* Bulk Actions Bar */}
                 {showBulkActions && (
                     <Card className="bg-blue-50 border-blue-200">
@@ -620,7 +634,7 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                     </Card>
                 )}
 
-                <div className="mb-4 flex items-center justify-between gap-2">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
                         <Input
                             type="text"
@@ -692,22 +706,12 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                     </div>
                 </div>
                 {registry.data?.length === 0 ? (
-                    <div className="text-center py-8">
-                        <svg
-                            className="mx-auto h-12 w-12 text-gray-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M3 7h18M3 11h18m-9 4h9m-9 4h6"
-                            />
-                        </svg>
-                        <p className="mt-2 text-sm text-gray-500">No registry data available.</p>
-                    </div>
+                    <EmptyState
+                        icon={FileText}
+                        title="No registry data yet"
+                        description="Upload your first batch using the Upload Wizard, or add entries manually after creating a batch."
+                        action={{ href: '/registry/upload-wizard', label: 'Upload Data' }}
+                    />
                 ) : (
                     <div className="border-gray-200 overflow-x-auto rounded-xl border z-0 bg-white">
                         <table className="min-w-full divide-y divide-gray-200">
@@ -755,9 +759,9 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                             ))}
                             </tbody>
                         </table>
-                        <div className="flex items-center justify-between px-6 py-4">
+                        <div className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-700">
+                                <span className="text-sm text-gray-600">
                                     Page {table.getState().pagination.pageIndex + 1} of{' '}
                                     {registry.meta.last_page || 1}
                                 </span>
@@ -766,7 +770,7 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                                     onChange={(e) => {
                                         table.setPageSize(Number(e.target.value));
                                     }}
-                                    className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1 text-sm"
+                                    className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                     disabled={isLoading}
                                 >
                                     {[10, 25, 50].map((pageSize) => (
@@ -777,28 +781,22 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                                 </select>
                             </div>
                             <div className="flex gap-2">
-                                <button
+                                <Button
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => table.previousPage()}
                                     disabled={!table.getCanPreviousPage() || isLoading}
-                                    className={`px-4 py-2 text-sm font-medium rounded-md ${
-                                        table.getCanPreviousPage() && !isLoading
-                                            ? 'bg-blue-500 text-white hover:bg-blue-600'
-                                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                    }`}
                                 >
                                     Previous
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => table.nextPage()}
                                     disabled={!table.getCanNextPage() || isLoading}
-                                    className={`px-4 py-2 text-sm font-medium rounded-md ${
-                                        table.getCanNextPage() && !isLoading
-                                            ? 'bg-blue-500 text-white hover:bg-blue-600'
-                                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                    }`}
                                 >
                                     Next
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>

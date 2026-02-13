@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PageHeader } from '@/components/page-header';
 
 interface OverviewStats {
     total_batches: number;
@@ -144,29 +144,29 @@ export default function ReportsDashboard({
     return (
         <AppLayout breadcrumbs={breadcrumbs} auth={auth}>
             <Head title="Reports Dashboard" />
-            <div className="flex flex-col gap-6 p-4">
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h1 className="text-2xl font-bold">Reports Dashboard</h1>
-                        <p className="text-gray-600">Analytics for verification status and compliance</p>
-                    </div>
-                    <div className="flex gap-2">
-                        <Link href="/reports/verification">
-                            <Button variant="outline">Verification Report</Button>
-                        </Link>
-                        <Link href="/reports/compliance">
-                            <Button variant="outline">Compliance Report</Button>
-                        </Link>
-                        <Link href="/reports/performance">
-                            <Button variant="outline">Performance Report</Button>
-                        </Link>
-                    </div>
-                </div>
+            <div className="flex flex-1 flex-col gap-6 p-6">
+                <PageHeader
+                    title="Reports Dashboard"
+                    description="Analytics for verification status, compliance, and performance metrics."
+                    actions={
+                        <div className="flex gap-2">
+                            <Link href="/reports/verification">
+                                <Button variant="outline" size="sm">Verification</Button>
+                            </Link>
+                            <Link href="/reports/compliance">
+                                <Button variant="outline" size="sm">Compliance</Button>
+                            </Link>
+                            <Link href="/reports/performance">
+                                <Button variant="outline" size="sm">Performance</Button>
+                            </Link>
+                        </div>
+                    }
+                />
 
                 {/* Filters */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Filters</CardTitle>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base">Filters</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

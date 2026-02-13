@@ -1,14 +1,22 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useInitials } from '@/hooks/use-initials';
-import { type BreadcrumbItem, type User, type SharedData } from '@/types';
-import React, { useEffect, useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
+import { type BreadcrumbItem, type User } from '@/types';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { HeadingSmall } from '@/components/heading-small';
-import DeleteUser from '@/components/delete-user';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { PageHeader } from '@/components/page-header';
+import { EmptyState } from '@/components/empty-state';
+import { Package, Plus } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 
 interface RegistryBatch {
@@ -54,6 +62,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function BatchIndex({ auth, batches, filters, schemes, batchTypes, statuses }: Props) {
+    const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+
     const handleFilterChange = (key: string, value: string) => {
         router.get('/batches', { ...filters, [key]: value }, { preserveState: true });
     };
@@ -78,23 +88,29 @@ export default function BatchIndex({ auth, batches, filters, schemes, batchTypes
     return (
         <AppLayout breadcrumbs={breadcrumbs} auth={auth}>
             <Head title="Registry Batches" />
-            <div className="flex flex-col gap-4 p-4">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-bold">Registry Batches</h1>
-                    <Link href="/batches/create">
-                        <Button>Create Batch</Button>
-                    </Link>
-                </div>
+            <div className="flex flex-1 flex-col gap-6 p-6">
+                <PageHeader
+                    title="Registry Batches"
+                    description="View and manage your registry batches. Create drafts, submit for verification, or track approval status."
+                    actions={
+                        <Link href="/batches/create">
+                            <Button className="gap-2">
+                                <Plus className="h-4 w-4" />
+                                Create Batch
+                            </Button>
+                        </Link>
+                    }
+                />
 
                 {/* Filters */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Filters</CardTitle>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base">Filters</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium mb-2">Scheme</label>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Scheme</label>
                                 <Select value={filters.scheme || 'all'} onValueChange={(value) => handleFilterChange('scheme', value === 'all' ? '' : value)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="All Schemes" />
@@ -107,8 +123,8 @@ export default function BatchIndex({ auth, batches, filters, schemes, batchTypes
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium mb-2">Batch Type</label>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Batch Type</label>
                                 <Select value={filters.batch_type || 'all'} onValueChange={(value) => handleFilterChange('batch_type', value === 'all' ? '' : value)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="All Types" />
@@ -121,8 +137,8 @@ export default function BatchIndex({ auth, batches, filters, schemes, batchTypes
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium mb-2">Status</label>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Status</label>
                                 <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value === 'all' ? '' : value)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="All Statuses" />
@@ -141,12 +157,17 @@ export default function BatchIndex({ auth, batches, filters, schemes, batchTypes
 
                 {/* Batches Table */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>All Batches</CardTitle>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base">All Batches</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {batches.length === 0 ? (
-                            <p className="text-gray-500">No batches found.</p>
+                            <EmptyState
+                                icon={Package}
+                                title="No batches yet"
+                                description="Create your first batch to start managing registry entries. You can add entries from the Registry page or upload CSV data."
+                                action={{ href: '/batches/create', label: 'Create Batch' }}
+                            />
                         ) : (
                             <Table>
                                 <TableHeader>
@@ -187,21 +208,10 @@ export default function BatchIndex({ auth, batches, filters, schemes, batchTypes
                                                             <Link href={`/batches/${batch.id}/edit`}>
                                                                 <Button variant="outline" size="sm">Edit</Button>
                                                             </Link>
-                                                            <Button 
-                                                                variant="outline" 
+                                                            <Button
+                                                                variant="outline"
                                                                 size="sm"
-                                                                onClick={() => {
-                                                                    DeleteUser.show({
-                                                                        id: batch.id,
-                                                                        name: batch.name,
-                                                                        onConfirm: () => {
-                                                                            router.delete(`/batches/${batch.id}`);
-                                                                        },
-                                                                        onCancel: () => {
-                                                                            console.log('Delete cancelled for batch:', batch.id);
-                                                                        }
-                                                                    });
-                                                                }}
+                                                                onClick={() => setDeleteTarget({ id: batch.id, name: batch.name })}
                                                             >
                                                                 Delete
                                                             </Button>
@@ -217,6 +227,33 @@ export default function BatchIndex({ auth, batches, filters, schemes, batchTypes
                     </CardContent>
                 </Card>
             </div>
+
+            <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+                <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+                    <DialogHeader>
+                        <DialogTitle>Delete batch?</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete &quot;{deleteTarget?.name}&quot;? This cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => {
+                                if (deleteTarget) {
+                                    router.delete(`/batches/${deleteTarget.id}`);
+                                    setDeleteTarget(null);
+                                }
+                            }}
+                        >
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

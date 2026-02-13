@@ -6,6 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PageHeader } from '@/components/page-header';
+import { EmptyState } from '@/components/empty-state';
+import { ClipboardCheck, BarChart3 } from 'lucide-react';
 
 interface RegistryBatch {
     id: number;
@@ -80,111 +83,65 @@ export default function VerificationIndex({ auth, batches, filters, schemes, bat
         return 'bg-green-100 text-green-800';
     };
 
+    const pendingCount = batches.filter((b) => b.status === 'submitted').length;
+    const underReviewCount = batches.filter((b) => b.status === 'under_review').length;
+    const approvedCount = batches.filter((b) => b.status === 'approved').length;
+    const rejectedCount = batches.filter((b) => b.status === 'rejected').length;
+
     return (
         <AppLayout breadcrumbs={breadcrumbs} auth={auth}>
             <Head title="Batch Verification" />
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
-                {/* Header Section */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                Batch Verification
-                            </h1>
-                            <p className="text-gray-600 mt-2">Review and approve registry batches submitted by VBoS</p>
-                        </div>
+            <div className="flex flex-1 flex-col gap-6 p-6">
+                <PageHeader
+                    title="Batch Verification"
+                    description="Review and approve registry batches submitted for verification."
+                    actions={
                         <Link href="/verification/dashboard">
-                            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300">
+                            <Button variant="outline" className="gap-2">
+                                <BarChart3 className="h-4 w-4" />
                                 Dashboard
                             </Button>
                         </Link>
-                    </div>
-                </div>
+                    }
+                />
 
-                {/* Enhanced Quick Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-blue-100 text-sm font-medium mb-1">Pending Verification</p>
-                                    <div className="text-3xl font-bold">
-                                        {batches.filter(b => b.status === 'submitted').length}
-                                    </div>
-                                    <p className="text-blue-100 text-xs mt-2">Awaiting review</p>
-                                </div>
-                                <div className="bg-white/20 p-3 rounded-full">
-                                    <div className="w-6 h-6 bg-white rounded-full"></div>
-                                </div>
-                            </div>
+                {/* Quick Stats */}
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    <Card>
+                        <CardContent className="p-4">
+                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Pending</p>
+                            <p className="mt-1 text-2xl font-bold text-blue-600">{pendingCount}</p>
                         </CardContent>
-                        <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mb-16"></div>
                     </Card>
-
-                    <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-yellow-500 to-yellow-600 text-white">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-yellow-100 text-sm font-medium mb-1">Under Review</p>
-                                    <div className="text-3xl font-bold">
-                                        {batches.filter(b => b.status === 'under_review').length}
-                                    </div>
-                                    <p className="text-yellow-100 text-xs mt-2">In progress</p>
-                                </div>
-                                <div className="bg-white/20 p-3 rounded-full">
-                                    <div className="w-6 h-6 bg-white rounded-full"></div>
-                                </div>
-                            </div>
+                    <Card>
+                        <CardContent className="p-4">
+                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Under Review</p>
+                            <p className="mt-1 text-2xl font-bold text-amber-600">{underReviewCount}</p>
                         </CardContent>
-                        <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mb-16"></div>
                     </Card>
-
-                    <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-green-500 to-green-600 text-white">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-green-100 text-sm font-medium mb-1">Approved</p>
-                                    <div className="text-3xl font-bold">
-                                        {batches.filter(b => b.status === 'approved').length}
-                                    </div>
-                                    <p className="text-green-100 text-xs mt-2">Completed</p>
-                                </div>
-                                <div className="bg-white/20 p-3 rounded-full">
-                                    <div className="w-6 h-6 bg-white rounded-full"></div>
-                                </div>
-                            </div>
+                    <Card>
+                        <CardContent className="p-4">
+                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Approved</p>
+                            <p className="mt-1 text-2xl font-bold text-green-600">{approvedCount}</p>
                         </CardContent>
-                        <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mb-16"></div>
                     </Card>
-
-                    <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-red-500 to-red-600 text-white">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-red-100 text-sm font-medium mb-1">Rejected</p>
-                                    <div className="text-3xl font-bold">
-                                        {batches.filter(b => b.status === 'rejected').length}
-                                    </div>
-                                    <p className="text-red-100 text-xs mt-2">Not approved</p>
-                                </div>
-                                <div className="bg-white/20 p-3 rounded-full">
-                                    <div className="w-6 h-6 bg-white rounded-full"></div>
-                                </div>
-                            </div>
+                    <Card>
+                        <CardContent className="p-4">
+                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Rejected</p>
+                            <p className="mt-1 text-2xl font-bold text-red-600">{rejectedCount}</p>
                         </CardContent>
-                        <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mb-16"></div>
                     </Card>
                 </div>
 
                 {/* Filters */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Filters</CardTitle>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base">Filters</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium mb-2">Scheme</label>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Scheme</label>
                                 <Select value={filters.scheme || 'all'} onValueChange={(value) => handleFilterChange('scheme', value === 'all' ? '' : value)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="All Schemes" />
@@ -197,8 +154,8 @@ export default function VerificationIndex({ auth, batches, filters, schemes, bat
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium mb-2">Batch Type</label>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Batch Type</label>
                                 <Select value={filters.batch_type || 'all'} onValueChange={(value) => handleFilterChange('batch_type', value === 'all' ? '' : value)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="All Types" />
@@ -211,8 +168,8 @@ export default function VerificationIndex({ auth, batches, filters, schemes, bat
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium mb-2">Status</label>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Status</label>
                                 <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value === 'all' ? '' : value)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="All Statuses" />
@@ -231,12 +188,16 @@ export default function VerificationIndex({ auth, batches, filters, schemes, bat
 
                 {/* Batches Table */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Submitted Batches</CardTitle>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base">Submitted Batches</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {batches.length === 0 ? (
-                            <p className="text-gray-500">No batches found.</p>
+                            <EmptyState
+                                icon={ClipboardCheck}
+                                title="No batches to verify"
+                                description="Batches submitted for verification will appear here. New submissions will show up when users submit their draft batches."
+                            />
                         ) : (
                             <Table>
                                 <TableHeader>

@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import InputError from '@/components/input-error';
+import { PageHeader } from '@/components/page-header';
 import { Upload, Info } from 'lucide-react';
 
 interface Props {
@@ -52,13 +54,16 @@ export default function BatchCreate({ auth, schemes, batchTypes }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs} auth={auth}>
             <Head title="Create Batch" />
-            <div className="flex flex-col gap-4 p-4">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-bold">Create Registry Batch</h1>
-                    <Link href="/batches">
-                        <Button variant="outline">Back to Batches</Button>
-                    </Link>
-                </div>
+            <div className="flex flex-1 flex-col gap-6 p-6">
+                <PageHeader
+                    title="Create Registry Batch"
+                    description="Create an empty batch to add registry entries manually. For CSV uploads, use the Upload Wizard instead."
+                    actions={
+                        <Link href="/batches">
+                            <Button variant="outline">Back to Batches</Button>
+                        </Link>
+                    }
+                />
 
                 {/* Suggestion for CSV upload */}
                 <Alert className="border-blue-200 bg-blue-50">
@@ -89,7 +94,7 @@ export default function BatchCreate({ auth, schemes, batchTypes }: Props) {
                                         placeholder="e.g., January 2026 RSE Departures"
                                         required
                                     />
-                                    {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+                                    <InputError message={errors.name} />
                                 </div>
                                 <div>
                                     <Label htmlFor="scheme">Labour Scheme *</Label>
@@ -103,7 +108,7 @@ export default function BatchCreate({ auth, schemes, batchTypes }: Props) {
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.scheme && <p className="text-red-500 text-sm mt-1">{errors.scheme}</p>}
+                                    <InputError message={errors.scheme} />
                                 </div>
                                 <div>
                                     <Label htmlFor="batch_type">Batch Type *</Label>
@@ -117,7 +122,7 @@ export default function BatchCreate({ auth, schemes, batchTypes }: Props) {
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.batch_type && <p className="text-red-500 text-sm mt-1">{errors.batch_type}</p>}
+                                    <InputError message={errors.batch_type} />
                                 </div>
                                 <div>
                                     <Label htmlFor="description">Description</Label>
@@ -128,7 +133,7 @@ export default function BatchCreate({ auth, schemes, batchTypes }: Props) {
                                         onChange={(e) => setData('description', e.target.value)}
                                         placeholder="Optional description"
                                     />
-                                    {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+                                    <InputError message={errors.description} />
                                 </div>
                             </div>
 
@@ -142,7 +147,7 @@ export default function BatchCreate({ auth, schemes, batchTypes }: Props) {
                                         onChange={(e) => setData('period_start', e.target.value)}
                                         required
                                     />
-                                    {errors.period_start && <p className="text-red-500 text-sm mt-1">{errors.period_start}</p>}
+                                    <InputError message={errors.period_start} />
                                 </div>
                                 <div>
                                     <Label htmlFor="period_end">Period End *</Label>
@@ -154,7 +159,7 @@ export default function BatchCreate({ auth, schemes, batchTypes }: Props) {
                                         min={data.period_start}
                                         required
                                     />
-                                    {errors.period_end && <p className="text-red-500 text-sm mt-1">{errors.period_end}</p>}
+                                    <InputError message={errors.period_end} />
                                 </div>
                             </div>
 

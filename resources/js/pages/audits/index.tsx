@@ -1,14 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import { useReactTable, getCoreRowModel, getSortedRowModel, getPaginationRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
-import { useInitials } from '@/hooks/use-initials';
-import { type BreadcrumbItem, type User, type SharedData } from '@/types';
+import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
+import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { HeadingSmall } from '@/components/heading-small';
-import DeleteUser from '@/components/delete-user';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { PageHeader } from '@/components/page-header';
+import { EmptyState } from '@/components/empty-state';
+import { ClipboardList } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 
 interface Audit {
@@ -39,27 +45,25 @@ export default function Audits({ audits }: Props) {
     const [showAlert, setShowAlert] = useState(!!flashMessage);
     const [alertMessage, setAlertMessage] = useState<string | null>(flashMessage || null);
     const [auditsData, setAuditsData] = useState(audits);
+    const [showClearDialog, setShowClearDialog] = useState(false);
 
     useEffect(() => {
         if (flashMessage) {
             setShowAlert(true);
+            setAlertMessage(flashMessage);
             const timer = setTimeout(() => setShowAlert(false), 4000);
             return () => clearTimeout(timer);
         }
     }, [flashMessage]);
 
     const handleClearLogs = () => {
-        DeleteUser.show({
-            id: 0, // Use 0 as a special ID for system action
-            name: 'All Audit Logs',
-            onConfirm: () => {
+        setShowClearDialog(false);
+        router.delete(route('audits.clear'), {
+            preserveScroll: true,
+            onSuccess: () => {
                 setAlertMessage('Audit logs cleared successfully.');
                 setShowAlert(true);
-                router.delete('/audits');
             },
-            onCancel: () => {
-                console.log('Clear audit logs cancelled');
-            }
         });
     };
 
@@ -114,7 +118,18 @@ export default function Audits({ audits }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs} auth={auth}>
             <Head title="Audit Logs" />
-            <div className="relative flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+            <div className="relative flex h-full flex-1 flex-col gap-6 rounded-xl p-6">
+                <PageHeader
+                    title="Audit Logs"
+                    description="Track changes to registry entries. All create, update, and delete actions are recorded here."
+                    actions={
+                        auditsData.data.length > 0 && (
+                            <Button variant="destructive" size="sm" onClick={() => setShowClearDialog(true)}>
+                                Clear Logs
+                            </Button>
+                        )
+                    }
+                />
                 {showAlert && alertMessage && (
                     <Alert
                         variant={flash?.success ? 'default' : 'destructive'}
@@ -136,32 +151,13 @@ export default function Audits({ audits }: Props) {
                     </Alert>
                 )}
                 {auditsData.data.length === 0 ? (
-                    <div className="text-center py-8">
-                        <svg
-                            className="mx-auto h-12 w-12 text-gray-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M3 7h18M3 11h18m-9 4h9m-9 4h6"
-                            />
-                        </svg>
-                        <p className="mt-2 text-gray-500">No audit logs available.</p>
-                    </div>
+                    <EmptyState
+                        icon={ClipboardList}
+                        title="No audit logs yet"
+                        description="When you create, update, or delete registry entries, those actions will be recorded here."
+                    />
                 ) : (
                     <div className="border-sidebar-border/70 dark:border-sidebar-border overflow-x-auto rounded-xl border z-0">
-                        <div className="flex justify-end p-4">
-                            <button
-                                onClick={handleClearLogs}
-                                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-                            >
-                                Clear Logs
-                            </button>
-                        </div>
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                             {table.getHeaderGroups().map((headerGroup) => (
@@ -219,32 +215,45 @@ export default function Audits({ audits }: Props) {
                                 </select>
                             </div>
                             <div className="flex gap-2">
-                                <button
+                                <Button
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => table.previousPage()}
                                     disabled={!table.getCanPreviousPage()}
-                                    className={`px-4 py-2 text-sm font-medium rounded-md ${
-                                        table.getCanPreviousPage()
-                                            ? 'bg-blue-500 text-white hover:bg-blue-600'
-                                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                    }`}
                                 >
                                     Previous
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => table.nextPage()}
                                     disabled={!table.getCanNextPage()}
-                                    className={`px-4 py-2 text-sm font-medium rounded-md ${
-                                        table.getCanNextPage()
-                                            ? 'bg-blue-500 text-white hover:bg-blue-600'
-                                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                    }`}
                                 >
                                     Next
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
                 )}
+
+            <Dialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+                <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+                    <DialogHeader>
+                        <DialogTitle>Clear all audit logs?</DialogTitle>
+                        <DialogDescription>
+                            This will permanently delete all audit log entries. This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="outline" onClick={() => setShowClearDialog(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleClearLogs}>
+                            Clear Logs
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
             </div>
         </AppLayout>
     );
