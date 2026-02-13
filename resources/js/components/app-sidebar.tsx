@@ -18,9 +18,9 @@ const mainNavItems: NavItem[] = [
         icon: FileIcon,
     },
     {
-        title: 'Upload Data',
-        href: '/registry/upload-wizard',
-        icon: UploadIcon,
+        title: 'divider',
+        href: '',
+        icon: null,
     },
     {
         title: 'Batches',
@@ -28,9 +28,19 @@ const mainNavItems: NavItem[] = [
         icon: PackageIcon,
     },
     {
+        title: 'Upload Data',
+        href: '/registry/upload-wizard',
+        icon: UploadIcon,
+    },
+    {
         title: 'Verification',
         href: '/verification',
         icon: HistoryIcon,
+    },
+    {
+        title: 'divider',
+        href: '',
+        icon: null,
     },
     {
         title: 'Reports',

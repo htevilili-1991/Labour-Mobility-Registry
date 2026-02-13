@@ -12,6 +12,7 @@ export interface BreadcrumbItem {
 
 export interface NavGroup {
     title: string;
+    icon?: LucideIcon | null;
     items: NavItem[];
 }
 

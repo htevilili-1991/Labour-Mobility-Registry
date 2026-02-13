@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertCircle, Upload, FileText, Users, XCircle, Pencil } from 'lucide-react';
+import { CheckCircle, AlertCircle, Upload, FileText, Users, XCircle, Pencil, Download } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -174,11 +174,33 @@ const UploadWizard: React.FC = () => {
         // This would need return_date field to fully validate
         // For now, just validate date format
         if (!travelDate) return null;
-        const dateRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
-        if (!dateRegex.test(travelDate)) {
-            return 'Travel date should be in format DD/MM/YYYY';
+        
+        // Trim whitespace and remove quotes
+        const cleanDate = travelDate.trim().replace(/"/g, '');
+        
+        // Debug: log the actual date being validated
+        console.log(`Validating date: "${travelDate}" -> cleaned: "${cleanDate}"`);
+        
+        // Accept both DD/MM/YYYY and YYYY-MM-DD formats
+        const ddmmyyyyRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
+        const yyyymmddRegex = /^\d{4}-\d{2}-\d{2}$/;
+        
+        if (ddmmyyyyRegex.test(cleanDate)) {
+            console.log(`Date ${cleanDate} matches DD/MM/YYYY format`);
+            return null;
         }
-        return null;
+        
+        if (yyyymmddRegex.test(cleanDate)) {
+            console.log(`Date ${cleanDate} matches YYYY-MM-DD format, converting...`);
+            // Convert YYYY-MM-DD to DD/MM/YYYY for display
+            const [year, month, day] = cleanDate.split('-');
+            const formattedDate = `${day}/${month}/${year}`;
+            console.log(`Converted to: ${formattedDate}`);
+            return null;
+        }
+        
+        console.log(`Date ${cleanDate} does not match any expected format`);
+        return 'Travel date should be in format DD/MM/YYYY or YYYY-MM-DD';
     };
 
     // Run validation on headers + rows and return CsvPreview (reused after file load and after edit)
@@ -193,11 +215,11 @@ const UploadWizard: React.FC = () => {
             if (row.length < headers.length) {
                 errors.push(`Row ${rowNum}: Missing columns (expected ${headers.length}, got ${row.length})`);
             }
-            const [surname, givenName, nationality, countryResidence, nationalId, docType, docNo, dob, age, sex, travelDate, direction] = row;
-            if (!surname || !givenName || !nationality || !docType || !docNo) {
+            const [surname, givenName, nationality, countryOfResidence, nationalIdNumber, documentType, documentNo, dob, age, sex, travelDate, direction, accommodationAddress, note, travelReason, borderPost, destinationComingFrom] = row;
+            if (!surname || !givenName || !nationality || !documentType || !documentNo) {
                 errors.push(`Row ${rowNum}: Missing required fields`);
             }
-            const passportError = validatePassportFormat(docNo ?? '', docType ?? '');
+            const passportError = validatePassportFormat(documentNo ?? '', documentType ?? '');
             if (passportError) errors.push(`Row ${rowNum}: ${passportError}`);
             if (dob && age) {
                 const calculatedAge = calculateAge(dob);
@@ -207,7 +229,7 @@ const UploadWizard: React.FC = () => {
             }
             const dateError = validateDateLogic(travelDate ?? '', direction ?? '');
             if (dateError) errors.push(`Row ${rowNum}: ${dateError}`);
-            const docKey = `${nationality}-${docNo}`;
+            const docKey = `${nationality}-${documentNo}`;
             if (duplicates.has(docKey)) {
                 duplicates.get(docKey)!.push(rowNum);
             } else {
@@ -521,6 +543,38 @@ const UploadWizard: React.FC = () => {
                                     </CardHeader>
                                     <CardContent>
                                         <div className="space-y-4">
+                                            {/* CSV Template Download - Prominent Position */}
+                                            <div className="p-4 bg-blue-100 border-2 border-blue-300 rounded-lg">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <h4 className="font-bold text-blue-900 mb-1 text-lg">📋 Need a CSV Template?</h4>
+                                                        <p className="text-sm text-blue-800">Download our template to ensure your data is formatted correctly before uploading.</p>
+                                                    </div>
+                                                    <Button
+                                                        variant="default"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            const csvContent = `surname,given_name,nationality,country_of_residence,national_id_number,document_type,document_no,dob,age,sex,travel_date,direction,accommodation_address,note,travel_reason,border_post,destination_coming_from
+Besv,Dom,PapuaNewGuinea,Australia,594375,National ID,9CQDZhJF,04-25-95,30,Male,10-06-25,Outbound,"633 Walter Stravenue Suite 010
+Benjaminside, KS 17375-4713",N/A,Medical,Luganville,New Zealand`;
+                                                            const blob = new Blob([csvContent], { type: 'text/csv' });
+                                                            const url = window.URL.createObjectURL(blob);
+                                                            const a = document.createElement('a');
+                                                            a.href = url;
+                                                            a.download = 'registry-template.csv';
+                                                            document.body.appendChild(a);
+                                                            a.click();
+                                                            document.body.removeChild(a);
+                                                            window.URL.revokeObjectURL(url);
+                                                        }}
+                                                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                                                    >
+                                                        <Download className="w-4 h-4" />
+                                                        Download Template
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            
                                             {/* Drag and Drop Zone */}
                                             <div
                                                 ref={dropZoneRef}

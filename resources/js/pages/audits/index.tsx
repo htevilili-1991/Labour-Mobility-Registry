@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
+import { useReactTable, getCoreRowModel, getSortedRowModel, getPaginationRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import { useInitials } from '@/hooks/use-initials';
 import { type BreadcrumbItem, type User, type SharedData } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { HeadingSmall } from '@/components/heading-small';
 import DeleteUser from '@/components/delete-user';
+import AppLayout from '@/layouts/app-layout';
 
 interface Audit {
     id: number;
