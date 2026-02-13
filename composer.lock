@@ -12,7 +12,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/barryvdh/laravel-dompdf.git",
-                "reference": "8e71b99fc53bb8eb77f316c3c452dd74ab7cb25d"
+                "reference": "refs/heads/master"
             },
             "dist": {
                 "type": "zip",
