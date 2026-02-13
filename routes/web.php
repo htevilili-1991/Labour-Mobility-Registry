@@ -1,10 +1,10 @@
 <?php
 
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\RegistryController;
 use App\Http\Controllers\AuditController;
-use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RegistryBatchController;
+use App\Http\Controllers\RegistryController;
+use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\VerificationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -13,6 +13,7 @@ Route::get('/', function () {
     if (Auth::check()) {
         return redirect()->route('dashboard');
     }
+
     return Inertia::render('auth/login');
 })->name('home');
 
@@ -27,6 +28,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('upload-wizard', [RegistryController::class, 'uploadWizard'])->name('registry.upload-wizard');
         Route::post('upload', [RegistryController::class, 'storeCsv'])->name('registry.storeCsv');
         Route::post('store-wizard', [RegistryController::class, 'storeWizard'])->name('registry.storeWizard');
+        Route::post('bulk-delete', [RegistryController::class, 'bulkDestroy'])->name('registry.bulk-destroy');
 
         // Resource routes with constraints
         Route::resource('/', RegistryController::class)

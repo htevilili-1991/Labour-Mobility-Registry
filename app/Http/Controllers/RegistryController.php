@@ -399,6 +399,24 @@ class RegistryController extends Controller
     }
 
     /**
+     * Bulk delete multiple registry records.
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $validated = $request->validate([
+            'registry_ids' => ['required', 'array'],
+            'registry_ids.*' => ['integer', 'exists:registry,id'],
+        ]);
+
+        $ids = $validated['registry_ids'];
+        $deleted = Registry::whereIn('id', $ids)->delete();
+
+        Log::info('Bulk deleted registry records', ['ids' => $ids, 'count' => $deleted]);
+
+        return Redirect::route('registry.index')->with('success', "{$deleted} record(s) deleted successfully.");
+    }
+
+    /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)

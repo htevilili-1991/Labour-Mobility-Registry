@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertCircle, Upload, FileText, Users, XCircle, Pencil, Download } from 'lucide-react';
+import { CheckCircle, AlertCircle, Upload, Users, XCircle, Pencil, Download, Wand2 } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -88,11 +88,16 @@ const UploadWizard: React.FC = () => {
 
     const { post, setData, processing, data } = form;
 
-    const [currentStep, setCurrentStep] = useState(savedProgress.currentStep);
+    const [currentStep, setCurrentStep] = useState(1);
     const [csvPreview, setCsvPreview] = useState<CsvPreview | null>(null);
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
     const [showCsvEditor, setShowCsvEditor] = useState(false);
     const [editableRows, setEditableRows] = useState<string[][]>([]);
+
+    // Always start at step 1 on mount (overrides any stale state from bfcache/localStorage)
+    useEffect(() => {
+        setCurrentStep(1);
+    }, []);
 
     // Auto-save progress to localStorage
     useEffect(() => {
@@ -122,13 +127,6 @@ const UploadWizard: React.FC = () => {
             title: 'Validate Data',
             description: 'Review data quality and fix any issues',
             icon: CheckCircle,
-            completed: false,
-        },
-        {
-            id: 'map',
-            title: 'Map Fields',
-            description: 'Map CSV columns to registry fields',
-            icon: FileText,
             completed: false,
         },
         {
@@ -175,32 +173,57 @@ const UploadWizard: React.FC = () => {
         // For now, just validate date format
         if (!travelDate) return null;
         
-        // Trim whitespace and remove quotes
         const cleanDate = travelDate.trim().replace(/"/g, '');
-        
-        // Debug: log the actual date being validated
-        console.log(`Validating date: "${travelDate}" -> cleaned: "${cleanDate}"`);
-        
-        // Accept both DD/MM/YYYY and YYYY-MM-DD formats
         const ddmmyyyyRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
         const yyyymmddRegex = /^\d{4}-\d{2}-\d{2}$/;
-        
-        if (ddmmyyyyRegex.test(cleanDate)) {
-            console.log(`Date ${cleanDate} matches DD/MM/YYYY format`);
+
+        if (ddmmyyyyRegex.test(cleanDate) || yyyymmddRegex.test(cleanDate)) {
             return null;
         }
-        
-        if (yyyymmddRegex.test(cleanDate)) {
-            console.log(`Date ${cleanDate} matches YYYY-MM-DD format, converting...`);
-            // Convert YYYY-MM-DD to DD/MM/YYYY for display
-            const [year, month, day] = cleanDate.split('-');
-            const formattedDate = `${day}/${month}/${year}`;
-            console.log(`Converted to: ${formattedDate}`);
-            return null;
-        }
-        
-        console.log(`Date ${cleanDate} does not match any expected format`);
+
         return 'Travel date should be in format DD/MM/YYYY or YYYY-MM-DD';
+    };
+
+    /**
+     * Parse various date formats and return DD/MM/YYYY or null if unparseable.
+     * Handles: MM-DD-YYYY, MM-DD-YY, DD-MM-YYYY, DD-MM-YY, DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD.
+     */
+    const parseAndFormatDate = (value: string): string | null => {
+        if (!value) return null;
+        const clean = value.trim().replace(/"/g, '');
+        if (!clean) return null;
+        // Already valid DD/MM/YYYY
+        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(clean)) return clean;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+            const [y, m, d] = clean.split('-');
+            return `${d}/${m}/${y}`;
+        }
+        // A-B-C with - or / : disambiguate MM-DD vs DD-MM (first > 12 => day, second > 12 => day)
+        const match = clean.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})$/);
+        if (match) {
+            let [, a, b, y] = match;
+            const nA = parseInt(a, 10);
+            const nB = parseInt(b, 10);
+            const year = y.length === 2 ? (parseInt(y, 10) < 50 ? `20${y}` : `19${y}`) : y;
+            let month: string;
+            let day: string;
+            if (nA > 12 && nB <= 12) {
+                day = a.padStart(2, '0');
+                month = b.padStart(2, '0');
+            } else if (nA <= 12 && nB > 12) {
+                month = a.padStart(2, '0');
+                day = b.padStart(2, '0');
+            } else {
+                month = a.padStart(2, '0');
+                day = b.padStart(2, '0');
+            }
+            return `${day}/${month}/${year}`;
+        }
+        const d = new Date(clean);
+        if (!isNaN(d.getTime())) {
+            return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+        }
+        return null;
     };
 
     // Run validation on headers + rows and return CsvPreview (reused after file load and after edit)
@@ -255,6 +278,58 @@ const UploadWizard: React.FC = () => {
             validationDetails,
         };
     }, []);
+
+    const handleAutoFixDates = useCallback(() => {
+        if (!csvPreview) return;
+        const { headers, rows } = csvPreview;
+        const normalizedHeaders = headers.map((h) => (h || '').toLowerCase().replace(/\s/g, '_').replace(/"/g, ''));
+        let travelDateIdx = normalizedHeaders.findIndex((h) =>
+            h === 'travel_date' || h === 'traveldate' || (h && h.includes('travel') && h.includes('date'))
+        );
+        let dobIdx = normalizedHeaders.findIndex((h) =>
+            h === 'dob' || h === 'date_of_birth' || h === 'dateofbirth'
+        );
+        if (travelDateIdx === -1 && headers.length >= 11) travelDateIdx = 10;
+        if (dobIdx === -1 && headers.length >= 9) dobIdx = 7;
+        if (travelDateIdx === -1 && dobIdx === -1) return;
+
+        const fixedRows = rows.map((row) => {
+            const next = [...row];
+            if (travelDateIdx >= 0 && row[travelDateIdx]) {
+                const fixed = parseAndFormatDate(String(row[travelDateIdx]));
+                if (fixed) next[travelDateIdx] = fixed;
+            }
+            if (dobIdx >= 0 && row[dobIdx]) {
+                const fixed = parseAndFormatDate(String(row[dobIdx]));
+                if (fixed) next[dobIdx] = fixed;
+            }
+            return next;
+        });
+
+        const nextPreview = runValidation(headers, fixedRows);
+        setCsvPreview(nextPreview);
+        setValidationErrors((nextPreview.validationDetails ?? []).map((d) => d.errors.join('; ')).flat());
+
+        const escapeCsv = (val: unknown) => {
+            const s = String(val ?? '');
+            return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+        };
+        const numCols = headers.length;
+        const csvLines = [headers.map(escapeCsv).join(',')].concat(
+            fixedRows.map((r) => r.slice(0, numCols).map(escapeCsv).concat(Array(Math.max(0, numCols - r.length)).fill('')).join(','))
+        );
+        const blob = new Blob([csvLines.join('\n')], { type: 'text/csv' });
+        const file = new File([blob], data.csv_file?.name || 'registry-data.csv', { type: 'text/csv' });
+        setData('csv_file', file);
+    }, [csvPreview, runValidation, data.csv_file?.name, setData]);
+
+    const hasDateValidationErrors = useCallback(() => {
+        if (!csvPreview?.validationDetails) return false;
+        const dateMsg = 'travel date should be';
+        return csvPreview.validationDetails.some((d) =>
+            d.errors.some((e) => e.toLowerCase().includes(dateMsg))
+        );
+    }, [csvPreview]);
 
     const openCsvEditor = useCallback(() => {
         if (!csvPreview) return;
@@ -398,9 +473,7 @@ const UploadWizard: React.FC = () => {
         if (oneBased === 1) return !!csvPreview;
         // Step 2: completed when we've moved past it
         if (oneBased === 2) return currentStep > 2;
-        // Step 3: completed when we've moved past it
-        if (oneBased === 3) return currentStep > 3;
-        // Step 4: in progress when on it, not "completed" until form submits
+        // Step 3: in progress when on it, not "completed" until form submits
         return false;
     }, [csvPreview, currentStep]);
 
@@ -408,15 +481,13 @@ const UploadWizard: React.FC = () => {
     const isStepHasError = useCallback((stepIndex: number) => {
         const oneBased = stepIndex + 1;
         const isCurrentStep = currentStep === oneBased;
-        if (!isCurrentStep) return false; // only current step can be in "error" state
+        if (!isCurrentStep) return false;
         // Step 1: error when no file selected
         if (oneBased === 1) return !csvPreview;
         // Step 2: error when no valid rows
         if (oneBased === 2) return !csvPreview || csvPreview.validRows === 0;
-        // Step 3: no validation, always can proceed
-        if (oneBased === 3) return false;
-        // Step 4: error when batch name or type missing
-        if (oneBased === 4) return !data.batch_name?.trim() || !data.batch_type;
+        // Step 3: error when batch name or type missing
+        if (oneBased === 3) return !data.batch_name?.trim() || !data.batch_type;
         return false;
     }, [currentStep, csvPreview, data.batch_name, data.batch_type]);
 
@@ -555,8 +626,7 @@ const UploadWizard: React.FC = () => {
                                                         size="sm"
                                                         onClick={() => {
                                                             const csvContent = `surname,given_name,nationality,country_of_residence,national_id_number,document_type,document_no,dob,age,sex,travel_date,direction,accommodation_address,note,travel_reason,border_post,destination_coming_from
-Besv,Dom,PapuaNewGuinea,Australia,594375,National ID,9CQDZhJF,04-25-95,30,Male,10-06-25,Outbound,"633 Walter Stravenue Suite 010
-Benjaminside, KS 17375-4713",N/A,Medical,Luganville,New Zealand`;
+Besv,Dom,PapuaNewGuinea,Australia,594375,National ID,9CQDZhJF,25/04/1995,30,Male,06/10/2025,Outbound,633 Walter Stravenue Suite 010 Benjaminside KS 17375-4713,N/A,Medical,Luganville,New Zealand`;
                                                             const blob = new Blob([csvContent], { type: 'text/csv' });
                                                             const url = window.URL.createObjectURL(blob);
                                                             const a = document.createElement('a');
@@ -717,6 +787,17 @@ Benjaminside, KS 17375-4713",N/A,Medical,Luganville,New Zealand`;
                                                                     </li>
                                                                 ))}
                                                             </ul>
+                                                            {hasDateValidationErrors() && (
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="default"
+                                                                    onClick={handleAutoFixDates}
+                                                                    className="mt-3 bg-blue-600 hover:bg-blue-700"
+                                                                >
+                                                                    <Wand2 className="w-4 h-4 mr-2" />
+                                                                    Auto Fix Date Formats
+                                                                </Button>
+                                                            )}
                                                         </div>
                                                     )}
 
@@ -743,7 +824,7 @@ Benjaminside, KS 17375-4713",N/A,Medical,Luganville,New Zealand`;
                                                                 onClick={handleStepComplete}
                                                                 className="w-full bg-green-600 hover:bg-green-700"
                                                             >
-                                                                Continue to Field Mapping
+                                                                Continue to Batch Creation
                                                             </Button>
                                                         ) : (
                                                             <p className="text-center text-sm text-red-600 py-2">
@@ -759,59 +840,6 @@ Benjaminside, KS 17375-4713",N/A,Medical,Luganville,New Zealand`;
                             )}
 
                             {currentStep === 3 && (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <FileText className="w-5 h-5" />
-                                            Map Fields
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-4">
-                                            <p className="text-gray-600 mb-4">
-                                                Map your CSV columns to the required registry fields. This ensures data is properly imported.
-                                            </p>
-                                            
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="p-4 border rounded-lg">
-                                                    <h4 className="font-semibold mb-2">Required Fields</h4>
-                                                    <ul className="text-sm space-y-1">
-                                                        <li>• Surname</li>
-                                                        <li>• Given Name</li>
-                                                        <li>• Nationality</li>
-                                                        <li>• Document Type</li>
-                                                        <li>• Document Number</li>
-                                                        <li>• Date of Birth</li>
-                                                        <li>• Age</li>
-                                                        <li>• Sex</li>
-                                                        <li>• Travel Date</li>
-                                                        <li>• Direction</li>
-                                                    </ul>
-                                                </div>
-                                                
-                                                <div className="p-4 border rounded-lg">
-                                                    <h4 className="font-semibold mb-2">Your CSV Headers</h4>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {csvPreview?.headers.map((header, index) => (
-                                                            <Badge key={index} variant="outline" className="text-xs mb-1">
-                                                                {header}
-                                                            </Badge>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="mt-6">
-                                                <Button onClick={handleStepComplete} className="w-full bg-green-600 hover:bg-green-700">
-                                                    Continue to Batch Creation
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-
-                            {currentStep === 4 && (
                                 <Card>
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2">

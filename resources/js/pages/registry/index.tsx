@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DownloadIcon, ChevronDownIcon, PlusIcon } from 'lucide-react';
+import { DownloadIcon, ChevronDownIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { debounce } from 'lodash';
@@ -169,6 +169,26 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
             setIsLoading(false);
         }
     }, [selectedBatchId, selectedIds, router]);
+
+    const handleBulkDelete = useCallback(() => {
+        if (selectedIds.size === 0) return;
+        if (!confirm(`Are you sure you want to delete ${selectedIds.size} selected record(s)? This cannot be undone.`)) return;
+
+        const csrfToken = getCsrfToken();
+        if (!csrfToken) return;
+
+        router.post(route('registry.bulk-destroy'), { registry_ids: Array.from(selectedIds) }, {
+            preserveScroll: true,
+            headers: { 'X-CSRF-TOKEN': csrfToken },
+            onSuccess: () => {
+                setSelectedIds(new Set());
+                setShowBulkActions(false);
+            },
+            onError: (errors) => {
+                setNavigationError(Object.values(errors).flat().join(' ') || 'Failed to delete records');
+            },
+        });
+    }, [selectedIds, router]);
 
     useEffect(() => {
         setShowBulkActions(selectedIds.size > 0);
@@ -564,6 +584,15 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                                             </Button>
                                         </div>
                                     )}
+                                    <Button
+                                        variant="destructive"
+                                        onClick={handleBulkDelete}
+                                        disabled={isLoading}
+                                        className="bg-red-600 hover:bg-red-700"
+                                    >
+                                        <Trash2Icon className="h-4 w-4 mr-2" />
+                                        Delete Selected
+                                    </Button>
                                 </div>
                                 <Button
                                     variant="outline"
