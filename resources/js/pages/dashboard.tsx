@@ -1,16 +1,31 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, type User, type SharedData } from '@/types';
+import { type BreadcrumbItem, type SharedData } from '@/types';
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
-import AccessibilityModule from 'highcharts/modules/accessibility'; // Import as a module
-import { Users, Calendar, Globe, TrendingUp, FileText, Activity } from 'lucide-react';
+import AccessibilityModule from 'highcharts/modules/accessibility';
+import {
+    Users,
+    Calendar,
+    Globe,
+    TrendingUp,
+    FileText,
+    Activity,
+    Package,
+    ClipboardCheck,
+    CheckCircle2,
+    ArrowUpRight,
+    ArrowDownRight,
+    Upload,
+    LayoutGrid,
+    BarChart3,
+    Layers,
+} from 'lucide-react';
 
 interface Registry {
     id: number;
@@ -19,448 +34,591 @@ interface Registry {
     nationality: string;
     travel_date: string | null;
     created_at: string;
+    direction: string;
+}
+
+interface ChartPoint {
+    name: string;
+    y: number;
 }
 
 interface Metrics {
     total_records: number;
     records_this_month: number;
     unique_nationalities: number;
-}
-
-interface ChartData {
-    name: string;
-    y: number;
+    mom_change: number;
+    draft_batches: number;
+    pending_verification: number;
+    approved_batches: number;
+    total_batches: number;
 }
 
 interface Props {
     metrics: Metrics;
     monthly_records_travel: Record<string, number>;
-    travel_reason_records: ChartData[];
-    sex_records: ChartData[];
+    travel_reason_records: ChartPoint[];
+    sex_records: ChartPoint[];
+    direction_records: ChartPoint[];
+    batches_by_status: ChartPoint[];
+    top_destinations: ChartPoint[];
     recent_records: Registry[];
     error?: string;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [{ label: 'Dashboard', href: '/dashboard' }];
 
+const chartColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+
+function makeLineChart(
+    title: string,
+    categories: string[],
+    data: number[],
+    color = '#3b82f6'
+): Highcharts.Options {
+    return {
+        chart: { type: 'line', height: 260, backgroundColor: 'transparent' },
+        title: { text: title, style: { fontSize: '14px', fontWeight: '600' } },
+        xAxis: {
+            categories,
+            labels: { style: { fontSize: '11px', color: '#6b7280' } },
+            gridLineWidth: 0,
+        },
+        yAxis: {
+            min: 0,
+            title: { text: '' },
+            labels: { style: { fontSize: '11px', color: '#6b7280' } },
+            gridLineColor: 'rgba(0,0,0,0.06)',
+        },
+        series: [{
+            type: 'line',
+            name: 'Records',
+            data,
+            color,
+            lineWidth: 2,
+            marker: { enabled: true, radius: 3 },
+        }],
+        legend: { enabled: false },
+        credits: { enabled: false },
+        tooltip: { formatter: function () { return `<b>${this.x}</b><br/>Records: ${this.y}`; } },
+    };
+}
+
+function makePieChart(title: string, data: ChartPoint[], height = 260): Highcharts.Options {
+    return {
+        chart: { type: 'pie', height, backgroundColor: 'transparent' },
+        title: { text: title, style: { fontSize: '14px', fontWeight: '600' } },
+        series: [{ type: 'pie', name: 'Records', data, colors: chartColors }],
+        plotOptions: {
+            pie: {
+                dataLabels: {
+                    enabled: true,
+                    format: '{point.name}: {point.percentage:.0f}%',
+                    style: { fontSize: '11px' },
+                },
+                showInLegend: false,
+            },
+        },
+        legend: { enabled: false },
+        credits: { enabled: false },
+        tooltip: { pointFormat: '<b>{point.name}</b>: {point.y} ({point.percentage:.1f}%)' },
+    };
+}
+
 export default function Dashboard({
-                                      metrics,
-                                      monthly_records_travel,
-                                      travel_reason_records,
-                                      sex_records,
-                                      recent_records,
-                                      error,
-                                  }: Props) {
+    metrics,
+    monthly_records_travel,
+    travel_reason_records,
+    sex_records,
+    direction_records,
+    batches_by_status,
+    top_destinations,
+    recent_records,
+    error,
+}: Props) {
     const { auth } = usePage<SharedData>().props;
-    // Initialize Highcharts accessibility module
+    const userName = auth?.user?.name?.split(' ')[0] || 'User';
+
     useEffect(() => {
         if (typeof Highcharts === 'object' && typeof AccessibilityModule === 'function') {
             AccessibilityModule(Highcharts);
         }
-    }, []); // Empty dependency array ensures it runs once on mount
+    }, []);
 
-    // Chart for Records Over Time (travel_date)
     const hasTravelData = Object.keys(monthly_records_travel).length > 0;
-    const travelChartOptions: Highcharts.Options = {
-        chart: {
-            type: 'line',
-            height: 300,
-            backgroundColor: 'transparent',
-        },
-        title: {
-            text: 'Records Over Time', // Accessible title for screen readers
-        },
-        accessibility: {
-            description: 'This chart displays the number of records over time, grouped by month.',
-            landmarkVerbosity: 'one',
-            keyboardNavigation: {
-                enabled: true,
-            },
-        },
-        xAxis: {
-            categories: hasTravelData
-                ? Object.keys(monthly_records_travel).map((month) => {
-                    const [year, m] = month.split('-');
-                    return new Date(parseInt(year), parseInt(m) - 1).toLocaleString('default', {
-                        month: 'short',
-                        year: 'numeric',
-                    });
-                })
-                : [],
-            title: { text: 'Month', style: { color: '#6b7280', fontSize: '12px' } },
-            labels: { style: { color: '#6b7280', fontSize: '11px' } },
-            gridLineWidth: 0,
-        },
-        yAxis: {
-            title: { text: 'Records', style: { color: '#6b7280', fontSize: '12px' } },
-            min: 0,
-            gridLineColor: 'rgba(0, 0, 0, 0.1)',
-            labels: { style: { color: '#6b7280', fontSize: '11px' } },
-        },
-        series: [
-            {
-                type: 'line',
-                name: 'Records',
-                data: hasTravelData ? Object.values(monthly_records_travel) : [],
-                color: '#3b82f6',
-                lineWidth: 2,
-                marker: { enabled: true, radius: 4, fillColor: '#3b82f6', lineColor: '#ffffff', lineWidth: 1 },
-                states: { hover: { lineWidth: 3 } },
-            },
-        ],
-        plotOptions: { line: { linecap: 'round' } },
-        legend: { enabled: false },
-        credits: { enabled: false },
-        tooltip: {
-            backgroundColor: '#ffffff',
-            borderColor: '#e5e7eb',
-            borderRadius: 8,
-            shadow: true,
-            padding: 8,
-            style: { color: '#1f2937', fontSize: '12px' },
-            formatter: function (this: Highcharts.TooltipFormatterContextObject) {
-                return `<b>${this.x}</b><br/>Records: ${this.y}`;
-            },
-        },
-        responsive: {
-            rules: [
-                {
-                    condition: { maxWidth: 500 },
-                    chartOptions: { chart: { height: 200 }, xAxis: { labels: { style: { fontSize: '10px' } } } },
-                },
-            ],
-        },
-    };
-
-    // Chart for Records by Travel Reason
-    const hasReasonData = travel_reason_records.length > 0;
-    const reasonChartOptions: Highcharts.Options = {
-        chart: {
-            type: 'pie',
-            height: 300,
-            backgroundColor: 'transparent',
-        },
-        title: {
-            text: 'Records by Travel Reason', // Accessible title
-        },
-        accessibility: {
-            description: 'This pie chart shows the distribution of records by travel reason.',
-            landmarkVerbosity: 'one',
-            keyboardNavigation: {
-                enabled: true,
-            },
-        },
-        series: [
-            {
-                type: 'pie',
-                name: 'Records',
-                data: hasReasonData ? travel_reason_records : [],
-                colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
-            },
-        ],
-        plotOptions: {
-            pie: {
-                allowPointSelect: true,
-                cursor: 'pointer',
-                dataLabels: {
-                    enabled: true,
-                    format: '<b>{point.name}</b>: {point.percentage:.1f}%',
-                    style: { color: '#1f2937', fontSize: '12px' },
-                },
-                showInLegend: false,
-            },
-        },
-        legend: { enabled: false },
-        credits: { enabled: false },
-        tooltip: {
-            backgroundColor: '#ffffff',
-            borderColor: '#e5e7eb',
-            borderRadius: 8,
-            shadow: true,
-            padding: 8,
-            style: { color: '#1f2937', fontSize: '12px' },
-            pointFormat: '<b>{point.name}</b>: {point.y} ({point.percentage:.1f}%)',
-        },
-        responsive: {
-            rules: [{ condition: { maxWidth: 500 }, chartOptions: { chart: { height: 200 } } }],
-        },
-    };
-
-    // Chart for Records by Sex
-    const hasSexData = sex_records.length > 0;
-    const sexChartOptions: Highcharts.Options = {
-        chart: {
-            type: 'pie',
-            height: 300,
-            backgroundColor: 'transparent',
-        },
-        title: {
-            text: 'Records by Sex', // Accessible title
-        },
-        accessibility: {
-            description: 'This pie chart shows the distribution of records by sex.',
-            landmarkVerbosity: 'one',
-            keyboardNavigation: {
-                enabled: true,
-            },
-        },
-        series: [
-            {
-                type: 'pie',
-                name: 'Records',
-                data: hasSexData ? sex_records : [],
-                colors: ['#3b82f6', '#f59e0b', '#10b981'],
-            },
-        ],
-        plotOptions: {
-            pie: {
-                allowPointSelect: true,
-                cursor: 'pointer',
-                dataLabels: {
-                    enabled: true,
-                    format: '<b>{point.name}</b>: {point.percentage:.1f}%',
-                    style: { color: '#1f2937', fontSize: '12px' },
-                },
-                showInLegend: false,
-            },
-        },
-        legend: { enabled: false },
-        credits: { enabled: false },
-        tooltip: {
-            backgroundColor: '#ffffff',
-            borderColor: '#e5e7eb',
-            borderRadius: 8,
-            shadow: true,
-            padding: 8,
-            style: { color: '#1f2937', fontSize: '12px' },
-            pointFormat: '<b>{point.name}</b>: {point.y} ({point.percentage:.1f}%)',
-        },
-        responsive: {
-            rules: [{ condition: { maxWidth: 500 }, chartOptions: { chart: { height: 200 } } }],
-        },
-    };
+    const travelCategories = hasTravelData
+        ? Object.keys(monthly_records_travel).map((m) => {
+            const [y, mo] = m.split('-');
+            return new Date(parseInt(y), parseInt(mo) - 1).toLocaleString('default', {
+                month: 'short',
+                year: '2-digit',
+            });
+        })
+        : [];
+    const travelData = hasTravelData ? Object.values(monthly_records_travel) : [];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} auth={auth}>
             <Head title="Dashboard" />
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
-                {/* Header Section */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                Dashboard
-                            </h1>
-                            <p className="text-gray-600 mt-2">Welcome back! Here's your overview.</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="bg-blue-100 text-blue-800 px-3 py-1">
-                                <Activity className="w-4 h-4 mr-1" />
-                                Live Data
-                            </Badge>
-                        </div>
+            <div className="flex flex-1 flex-col gap-6 p-6">
+                {/* Header */}
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">
+                            Labour Mobility Registry
+                        </h1>
+                        <p className="text-sm text-gray-500">
+                            Welcome back, {userName}. Here&apos;s your operational overview.
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                            href="/registry/upload-wizard"
+                            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+                        >
+                            <Upload className="h-4 w-4" />
+                            Upload Data
+                        </Link>
+                        <Link
+                            href="/registry"
+                            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                            <LayoutGrid className="h-4 w-4" />
+                            Registry
+                        </Link>
                     </div>
                 </div>
 
+                {/* Quick Links */}
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Link
+                        href="/registry"
+                        className="group flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-blue-200 hover:shadow-md"
+                    >
+                        <div className="rounded-lg bg-blue-50 p-2.5 transition group-hover:bg-blue-100">
+                            <LayoutGrid className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                            <p className="font-medium text-gray-900">Registry</p>
+                            <p className="text-xs text-gray-500">View & manage all entries</p>
+                        </div>
+                        <ArrowUpRight className="ml-auto h-4 w-4 text-gray-400 transition group-hover:text-blue-600" />
+                    </Link>
+                    <Link
+                        href="/batches"
+                        className="group flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-emerald-200 hover:shadow-md"
+                    >
+                        <div className="rounded-lg bg-emerald-50 p-2.5 transition group-hover:bg-emerald-100">
+                            <Package className="h-5 w-5 text-emerald-600" />
+                        </div>
+                        <div>
+                            <p className="font-medium text-gray-900">Batches</p>
+                            <p className="text-xs text-gray-500">{metrics.total_batches} batches total</p>
+                        </div>
+                        <ArrowUpRight className="ml-auto h-4 w-4 text-gray-400 transition group-hover:text-emerald-600" />
+                    </Link>
+                    <Link
+                        href="/verification"
+                        className="group flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-amber-200 hover:shadow-md"
+                    >
+                        <div className="rounded-lg bg-amber-50 p-2.5 transition group-hover:bg-amber-100">
+                            <ClipboardCheck className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                            <p className="font-medium text-gray-900">Verification</p>
+                            <p className="text-xs text-gray-500">{metrics.pending_verification} awaiting review</p>
+                        </div>
+                        <ArrowUpRight className="ml-auto h-4 w-4 text-gray-400 transition group-hover:text-amber-600" />
+                    </Link>
+                    <Link
+                        href="/reports"
+                        className="group flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-violet-200 hover:shadow-md"
+                    >
+                        <div className="rounded-lg bg-violet-50 p-2.5 transition group-hover:bg-violet-100">
+                            <BarChart3 className="h-5 w-5 text-violet-600" />
+                        </div>
+                        <div>
+                            <p className="font-medium text-gray-900">Reports</p>
+                            <p className="text-xs text-gray-500">Analytics & exports</p>
+                        </div>
+                        <ArrowUpRight className="ml-auto h-4 w-4 text-gray-400 transition group-hover:text-violet-600" />
+                    </Link>
+                </div>
+
                 {error && (
-                    <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
-                        <div className="flex items-center">
-                            <FileText className="w-5 h-5 mr-2" />
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+                        <div className="flex items-center gap-2">
+                            <FileText className="h-5 w-5 shrink-0" />
                             {error}
                         </div>
                     </div>
                 )}
 
-                {/* Enhanced Metrics Cards */}
-                <div className="grid gap-6 md:grid-cols-3 mb-8">
-                    <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                        <CardContent className="p-6">
+                {/* KPI Cards */}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <Card>
+                        <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-blue-100 text-sm font-medium mb-1">Total Records</p>
-                                    <div className="text-3xl font-bold">{metrics.total_records.toLocaleString()}</div>
-                                    <p className="text-blue-100 text-xs mt-2">All time entries</p>
+                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                        Total Records
+                                    </p>
+                                    <p className="mt-1 text-2xl font-bold text-gray-900">
+                                        {metrics.total_records.toLocaleString()}
+                                    </p>
                                 </div>
-                                <div className="bg-white/20 p-3 rounded-full">
-                                    <Users className="w-8 h-8 text-white" />
+                                <div className="rounded-lg bg-blue-100 p-3">
+                                    <Users className="h-6 w-6 text-blue-600" />
                                 </div>
                             </div>
                         </CardContent>
-                        <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mb-16"></div>
                     </Card>
 
-                    <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-                        <CardContent className="p-6">
+                    <Card>
+                        <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-purple-100 text-sm font-medium mb-1">This Month</p>
-                                    <div className="text-3xl font-bold">{metrics.records_this_month.toLocaleString()}</div>
-                                    <p className="text-purple-100 text-xs mt-2">New records</p>
+                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                        This Month
+                                    </p>
+                                    <div className="mt-1 flex items-center gap-2">
+                                        <span className="text-2xl font-bold text-gray-900">
+                                            {metrics.records_this_month.toLocaleString()}
+                                        </span>
+                                        {metrics.mom_change !== 0 && (
+                                            <span
+                                                className={`inline-flex items-center text-xs font-medium ${
+                                                    metrics.mom_change >= 0 ? 'text-green-600' : 'text-red-600'
+                                                }`}
+                                            >
+                                                {metrics.mom_change >= 0 ? (
+                                                    <ArrowUpRight className="h-3 w-3" />
+                                                ) : (
+                                                    <ArrowDownRight className="h-3 w-3" />
+                                                )}
+                                                {Math.abs(metrics.mom_change)}%
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="bg-white/20 p-3 rounded-full">
-                                    <Calendar className="w-8 h-8 text-white" />
+                                <div className="rounded-lg bg-emerald-100 p-3">
+                                    <Calendar className="h-6 w-6 text-emerald-600" />
                                 </div>
                             </div>
                         </CardContent>
-                        <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mb-16"></div>
                     </Card>
 
-                    <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-green-500 to-green-600 text-white">
-                        <CardContent className="p-6">
+                    <Card>
+                        <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-green-100 text-sm font-medium mb-1">Nationalities</p>
-                                    <div className="text-3xl font-bold">{metrics.unique_nationalities.toLocaleString()}</div>
-                                    <p className="text-green-100 text-xs mt-2">Unique countries</p>
+                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                        Nationalities
+                                    </p>
+                                    <p className="mt-1 text-2xl font-bold text-gray-900">
+                                        {metrics.unique_nationalities.toLocaleString()}
+                                    </p>
                                 </div>
-                                <div className="bg-white/20 p-3 rounded-full">
-                                    <Globe className="w-8 h-8 text-white" />
+                                <div className="rounded-lg bg-violet-100 p-3">
+                                    <Globe className="h-6 w-6 text-violet-600" />
                                 </div>
                             </div>
                         </CardContent>
-                        <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mb-16"></div>
+                    </Card>
+
+                    <Card>
+                        <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                        Pending Verification
+                                    </p>
+                                    <p className="mt-1 text-2xl font-bold text-gray-900">
+                                        {metrics.pending_verification}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                        {metrics.total_batches} batches total
+                                    </p>
+                                </div>
+                                <div className="rounded-lg bg-amber-100 p-3">
+                                    <ClipboardCheck className="h-6 w-6 text-amber-600" />
+                                </div>
+                            </div>
+                        </CardContent>
                     </Card>
                 </div>
-                {/* Enhanced Analytics Section */}
-                <Card className="border-0 shadow-lg mb-8">
-                    <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 border-b">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center gap-2 text-xl">
-                                <TrendingUp className="w-5 h-5 text-blue-600" />
-                                Analytics Overview
-                            </CardTitle>
-                            <Badge variant="outline" className="text-xs">
-                                Real-time Data
-                            </Badge>
+
+                {/* Section: Batch Workflow */}
+                <div>
+                    <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+                        Batch Workflow
+                    </h2>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                    <Link
+                        href="/batches"
+                        className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-blue-200 hover:shadow"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-lg bg-gray-100 p-2">
+                                <Package className="h-5 w-5 text-gray-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-900">Draft Batches</p>
+                                <p className="text-2xl font-bold text-gray-700">{metrics.draft_batches}</p>
+                            </div>
                         </div>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                        <Tabs defaultValue="travel-date" className="w-full">
-                            <TabsList className="grid w-full grid-cols-3 mb-6 bg-gray-100 p-1 rounded-lg">
-                                <TabsTrigger value="travel-date" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md transition-all">
-                                    Records Over Time
-                                </TabsTrigger>
-                                <TabsTrigger value="travel-reason" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md transition-all">
-                                    By Travel Reason
-                                </TabsTrigger>
-                                <TabsTrigger value="sex" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md transition-all">
-                                    By Sex
-                                </TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="travel-date" className="h-[350px]">
-                                {hasTravelData ? (
-                                    <HighchartsReact highcharts={Highcharts} options={travelChartOptions} />
-                                ) : (
-                                    <div className="flex h-full items-center justify-center text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                                        <div className="text-center">
-                                            <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                                            <p>No travel date data available</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </TabsContent>
-                            <TabsContent value="travel-reason" className="h-[350px]">
-                                {hasReasonData ? (
-                                    <HighchartsReact highcharts={Highcharts} options={reasonChartOptions} />
-                                ) : (
-                                    <div className="flex h-full items-center justify-center text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                                        <div className="text-center">
-                                            <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                                            <p>No travel reason data available</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </TabsContent>
-                            <TabsContent value="sex" className="h-[350px]">
-                                {hasSexData ? (
-                                    <HighchartsReact highcharts={Highcharts} options={sexChartOptions} />
-                                ) : (
-                                    <div className="flex h-full items-center justify-center text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                                        <div className="text-center">
-                                            <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                                            <p>No sex data available</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </TabsContent>
-                        </Tabs>
-                    </CardContent>
-                </Card>
-                {/* Enhanced Recent Records Table */}
-                <Card className="border-0 shadow-lg">
-                    <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 border-b">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center gap-2 text-xl">
-                                <FileText className="w-5 h-5 text-green-600" />
-                                Recent Records
-                            </CardTitle>
-                            <Badge variant="outline" className="text-xs">
-                                Latest {recent_records.length} entries
-                            </Badge>
+                    </Link>
+                    <Link
+                        href="/verification"
+                        className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-amber-200 hover:shadow"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-lg bg-amber-50 p-2">
+                                <ClipboardCheck className="h-5 w-5 text-amber-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-900">Awaiting Review</p>
+                                <p className="text-2xl font-bold text-amber-600">{metrics.pending_verification}</p>
+                            </div>
                         </div>
+                    </Link>
+                    <Link
+                        href="/batches"
+                        className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-green-200 hover:shadow"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-lg bg-green-50 p-2">
+                                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-900">Approved</p>
+                                <p className="text-2xl font-bold text-green-600">{metrics.approved_batches}</p>
+                            </div>
+                        </div>
+                    </Link>
+                    </div>
+                </div>
+
+                {/* Section: Analytics */}
+                <div>
+                    <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+                        Analytics
+                    </h2>
+                    <div className="grid gap-6 lg:grid-cols-3">
+                    <Card className="lg:col-span-2">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <TrendingUp className="h-4 w-4 text-blue-600" />
+                                Records Over Time
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {hasTravelData ? (
+                                <HighchartsReact
+                                    highcharts={Highcharts}
+                                    options={makeLineChart(
+                                        '',
+                                        travelCategories,
+                                        travelData,
+                                        '#3b82f6'
+                                    )}
+                                />
+                            ) : (
+                                <div className="flex h-52 items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 text-gray-500">
+                                    <p className="text-sm">No travel date data yet</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Activity className="h-4 w-4 text-emerald-600" />
+                                By Direction
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {direction_records.length > 0 ? (
+                                <HighchartsReact
+                                    highcharts={Highcharts}
+                                    options={makePieChart('', direction_records)}
+                                />
+                            ) : (
+                                <div className="flex h-52 items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 text-gray-500">
+                                    <p className="text-sm">No direction data yet</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <FileText className="h-4 w-4 text-violet-600" />
+                                By Travel Reason
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {travel_reason_records.length > 0 ? (
+                                <HighchartsReact
+                                    highcharts={Highcharts}
+                                    options={makePieChart('', travel_reason_records)}
+                                />
+                            ) : (
+                                <div className="flex h-52 items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 text-gray-500">
+                                    <p className="text-sm">No travel reason data yet</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Globe className="h-4 w-4 text-amber-600" />
+                                Top Destinations
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {top_destinations.length > 0 ? (
+                                <HighchartsReact
+                                    highcharts={Highcharts}
+                                    options={makePieChart('', top_destinations, 260)}
+                                />
+                            ) : (
+                                <div className="flex h-52 items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 text-gray-500">
+                                    <p className="text-sm">No destination data yet</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Users className="h-4 w-4 text-pink-600" />
+                                By Sex
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {sex_records.length > 0 ? (
+                                <HighchartsReact
+                                    highcharts={Highcharts}
+                                    options={makePieChart('', sex_records)}
+                                />
+                            ) : (
+                                <div className="flex h-52 items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 text-gray-500">
+                                    <p className="text-sm">No sex data yet</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Layers className="h-4 w-4 text-slate-600" />
+                                Batch Status
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {batches_by_status.length > 0 ? (
+                                <HighchartsReact
+                                    highcharts={Highcharts}
+                                    options={makePieChart('', batches_by_status)}
+                                />
+                            ) : (
+                                <div className="flex h-52 items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 text-gray-500">
+                                    <p className="text-sm">No batches yet</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+                </div>
+
+                {/* Section: Recent Activity */}
+                <div>
+                    <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+                        Recent Records
+                    </h2>
+                {/* Recent Records */}
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <FileText className="h-4 w-4 text-gray-600" />
+                            Recent Records
+                        </CardTitle>
+                        <Link
+                            href="/registry"
+                            className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                        >
+                            View all
+                        </Link>
                     </CardHeader>
-                    <CardContent className="p-6">
+                    <CardContent>
                         {recent_records.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                                <FileText className="w-16 h-16 mb-4 text-gray-300" />
-                                <p className="text-lg font-medium">No recent records available</p>
-                                <p className="text-sm text-gray-400 mt-1">New records will appear here</p>
+                            <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                                <Users className="mb-4 h-12 w-12 text-gray-300" />
+                                <p className="text-sm">No records yet</p>
+                                <Link
+                                    href="/registry/upload-wizard"
+                                    className="mt-2 text-sm text-blue-600 hover:underline"
+                                >
+                                    Upload your first batch
+                                </Link>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <Table>
                                     <TableHeader>
-                                        <TableRow className="border-b border-gray-200 bg-gray-50">
-                                            <TableHead className="font-semibold text-gray-700">Surname</TableHead>
-                                            <TableHead className="font-semibold text-gray-700">Given Name</TableHead>
-                                            <TableHead className="font-semibold text-gray-700">Nationality</TableHead>
-                                            <TableHead className="font-semibold text-gray-700">Travel Date</TableHead>
-                                            <TableHead className="font-semibold text-gray-700">Created At</TableHead>
-                                            <TableHead className="font-semibold text-gray-700 text-right">Actions</TableHead>
+                                        <TableRow className="bg-gray-50">
+                                            <TableHead className="font-medium">Surname</TableHead>
+                                            <TableHead className="font-medium">Given Name</TableHead>
+                                            <TableHead className="font-medium">Nationality</TableHead>
+                                            <TableHead className="font-medium">Direction</TableHead>
+                                            <TableHead className="font-medium">Travel Date</TableHead>
+                                            <TableHead className="font-medium">Created</TableHead>
+                                            <TableHead className="text-right font-medium">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {recent_records.map((record, index) => (
-                                            <TableRow key={record.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                                <TableCell className="font-medium text-gray-900">
+                                        {recent_records.map((record) => (
+                                            <TableRow key={record.id} className="hover:bg-gray-50">
+                                                <TableCell className="font-medium">
                                                     {record.surname || 'N/A'}
                                                 </TableCell>
-                                                <TableCell className="text-gray-700">
-                                                    {record.given_name || 'N/A'}
+                                                <TableCell>{record.given_name || 'N/A'}</TableCell>
+                                                <TableCell>{record.nationality || 'N/A'}</TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={
+                                                            record.direction === 'Inbound'
+                                                                ? 'border-green-200 bg-green-50 text-green-700'
+                                                                : 'border-blue-200 bg-blue-50 text-blue-700'
+                                                        }
+                                                    >
+                                                        {record.direction || 'N/A'}
+                                                    </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <Globe className="w-4 h-4 text-blue-500" />
-                                                        <span className="text-gray-700">{record.nationality || 'N/A'}</span>
-                                                    </div>
+                                                    {record.travel_date
+                                                        ? format(new Date(record.travel_date), 'MMM d, yyyy')
+                                                        : 'N/A'}
                                                 </TableCell>
-                                                <TableCell className="text-gray-700">
-                                                    {record.travel_date ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <Calendar className="w-4 h-4 text-green-500" />
-                                                            <span>{format(new Date(record.travel_date), 'MMM dd, yyyy')}</span>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-gray-400">N/A</span>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-gray-700">
-                                                    {record.created_at ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <Activity className="w-4 h-4 text-purple-500" />
-                                                            <span>{format(new Date(record.created_at), 'MMM dd, yyyy HH:mm')}</span>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-gray-400">N/A</span>
-                                                    )}
+                                                <TableCell>
+                                                    {record.created_at
+                                                        ? format(new Date(record.created_at), 'MMM d')
+                                                        : 'N/A'}
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <Link 
-                                                        href={`/registry/${record.id}`} 
-                                                        className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                                                    <Link
+                                                        href={`/registry/${record.id}`}
+                                                        className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700"
                                                     >
                                                         View
-                                                        <TrendingUp className="w-3 h-3" />
+                                                        <ArrowUpRight className="h-3 w-3" />
                                                     </Link>
                                                 </TableCell>
                                             </TableRow>
@@ -471,6 +629,7 @@ export default function Dashboard({
                         )}
                     </CardContent>
                 </Card>
+                </div>
             </div>
         </AppLayout>
     );

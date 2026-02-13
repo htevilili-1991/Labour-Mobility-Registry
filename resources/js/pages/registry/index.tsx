@@ -217,7 +217,7 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                     <Checkbox
                         checked={registry.data.length > 0 && registry.data.every(r => selectedIds.has(r.id))}
                         onCheckedChange={toggleSelectAll}
-                        className="size-5 border-2 border-gray-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                        className="size-5 border-2 border-gray-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 data-[state=checked]:!text-white"
                     />
                 ),
                 id: 'select',
@@ -225,7 +225,7 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                     <Checkbox
                         checked={selectedIds.has(row.original.id)}
                         onCheckedChange={() => toggleSelection(row.original.id)}
-                        className="size-5 border-2 border-gray-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                        className="size-5 border-2 border-gray-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 data-[state=checked]:!text-white"
                     />
                 ),
                 enableSorting: false,
@@ -274,19 +274,13 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                         >
                             Edit
                         </Link>
-                        <Link
-                            href={`/registry/${row.original.id}`}
-                            method="delete"
-                            as="button"
+                        <button
+                            type="button"
+                            onClick={() => setSingleDeleteId(row.original.id)}
                             className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                            onClick={(e) => {
-                                if (!confirm('Are you sure you want to delete this record?')) {
-                                    e.preventDefault();
-                                }
-                            }}
                         >
                             Delete
-                        </Link>
+                        </button>
                     </div>
                 ),
                 enableSorting: false,
@@ -604,7 +598,7 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                                     )}
                                     <Button
                                         variant="destructive"
-                                        onClick={handleBulkDelete}
+                                        onClick={() => setShowBulkDeleteDialog(true)}
                                         disabled={isLoading}
                                         className="bg-red-600 hover:bg-red-700"
                                     >
@@ -810,6 +804,62 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                     </div>
                 )}
             </div>
+
+            {/* Bulk delete confirmation */}
+            <Dialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+                <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+                    <DialogHeader>
+                        <DialogTitle>Delete selected records?</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete {selectedIds.size} selected record(s)? This cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowBulkDeleteDialog(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={executeBulkDelete}
+                            disabled={isLoading}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Single delete confirmation */}
+            <Dialog open={singleDeleteId !== null} onOpenChange={(open) => !open && setSingleDeleteId(null)}>
+                <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+                    <DialogHeader>
+                        <DialogTitle>Delete this record?</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete this record? This cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button
+                            variant="outline"
+                            onClick={() => setSingleDeleteId(null)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={executeSingleDelete}
+                            disabled={isLoading}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }
