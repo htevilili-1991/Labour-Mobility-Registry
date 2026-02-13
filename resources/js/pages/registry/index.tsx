@@ -12,6 +12,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DownloadIcon, ChevronDownIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { debounce } from 'lodash';
 
 interface Registry {
@@ -87,6 +95,8 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [showBulkActions, setShowBulkActions] = useState(false);
     const [selectedBatchId, setSelectedBatchId] = useState<string>('');
+    const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+    const [singleDeleteId, setSingleDeleteId] = useState<number | null>(null);
     const lastNavigatedPage = useRef(registry.meta.current_page);
 
     useEffect(() => {
@@ -170,13 +180,12 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
         }
     }, [selectedBatchId, selectedIds, router]);
 
-    const handleBulkDelete = useCallback(() => {
+    const executeBulkDelete = useCallback(() => {
         if (selectedIds.size === 0) return;
-        if (!confirm(`Are you sure you want to delete ${selectedIds.size} selected record(s)? This cannot be undone.`)) return;
-
         const csrfToken = getCsrfToken();
         if (!csrfToken) return;
 
+        setShowBulkDeleteDialog(false);
         router.post(route('registry.bulk-destroy'), { registry_ids: Array.from(selectedIds) }, {
             preserveScroll: true,
             headers: { 'X-CSRF-TOKEN': csrfToken },
@@ -190,6 +199,13 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
         });
     }, [selectedIds, router]);
 
+    const executeSingleDelete = useCallback(() => {
+        if (singleDeleteId === null) return;
+        const id = singleDeleteId;
+        setSingleDeleteId(null);
+        router.delete(route('registry.destroy', id), { preserveScroll: true });
+    }, [singleDeleteId, router]);
+
     useEffect(() => {
         setShowBulkActions(selectedIds.size > 0);
     }, [selectedIds.size]);
@@ -201,6 +217,7 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                     <Checkbox
                         checked={registry.data.length > 0 && registry.data.every(r => selectedIds.has(r.id))}
                         onCheckedChange={toggleSelectAll}
+                        className="size-5 border-2 border-gray-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                     />
                 ),
                 id: 'select',
@@ -208,6 +225,7 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                     <Checkbox
                         checked={selectedIds.has(row.original.id)}
                         onCheckedChange={() => toggleSelection(row.original.id)}
+                        className="size-5 border-2 border-gray-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                     />
                 ),
                 enableSorting: false,
@@ -733,14 +751,10 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                                             key={cell.id}
                                             className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
                                         >
-                                            {cell.column.id === 'actions'
-                                                ? flexRender(
-                                                    cell.column.columnDef.cell,
-                                                    cell.getContext()
-                                                )
-                                                : cell.getValue()
-                                                    ? String(cell.getValue())
-                                                    : 'N/A'}
+                                            {flexRender(
+                                                cell.column.columnDef.cell,
+                                                cell.getContext()
+                                            )}
                                         </td>
                                     ))}
                                 </tr>
