@@ -384,66 +384,56 @@ NOTE: All data on these screenshots are dummy data
 
 ### Core Interface
 **Login Screen**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/c70d1e09-8b51-44c9-9f0c-5c9b19aa7417" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/e6f13850-08ba-4fed-8dee-9c9810d25e2b" />
 
 **Dashboard with Real-Time Analytics**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/bb53f0e3-6102-45fa-a6c0-1c75f0368052" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/01baeb37-4811-4887-90f6-5d367799d0a5" />
 
 ### Registry Management
 **Registry Data Table with Multi-Select**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/669251d4-8152-4bf4-8283-7911aa0447e9" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/fe3b3a4d-5085-4db9-8365-0dd6ae8222c0" />
 
 **Individual Record Edit Form**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/baebcb7e-3128-4bec-8704-ca2e27addfa8" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/c2f5fca3-08c3-4be9-aefe-a9363f06216d" />
 
 ### CSV Upload Wizard
 **Step 1: File Selection with Drag-and-Drop**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/a5b9cd43-c5d6-4da6-9a0c-dba75799ef41" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/e6957c75-4fdb-4e62-ac50-3be553cc2cad" />
 
 **Step 2: Real-Time Validation Results**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/792f95ca-ab46-4aa6-9cf1-3fcaf6f74462" />
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/3ff22252-47bf-48ea-bafb-59e2165baab1" />
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/2b1e90ae-dac9-4a21-9af7-f94ccae9b874" />
-
-**Step 3: Field Mapping Interface**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/1a37da3e-ffa1-407c-a8df-b94a7a1bd62e" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/79476c3a-b247-44f0-853b-347ffc265aba" />
 
 **Step 4: Batch Creation with Smart Defaults**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/2952de6c-3d78-4440-91e6-6becdf59f18c" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/7aa42ba1-3930-44bc-ba05-864a4f36a3d8" />
 
 ### Batch Management
 **Batch List with Filtering**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/8ebaa6c7-b264-4ce4-8af8-aae136d2d447" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/71d317a9-c155-4a5d-b56c-cc231c62c625" />
 
 **Batch Detail View with Registry Entries**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/ca1b1c68-f1ca-4050-8c0e-928191409b2d" />
-
-**Bulk Operations Interface**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/ec280247-d1ae-4700-8ffe-7b8945534479" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/e8232dab-39bd-4d99-bc40-b84d3c0cf8f5" />
 
 ### Verification & Administration
 **Verification Dashboard**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/281678dc-d060-4df0-ac67-e554d21d7f54" />
-<img width="1870" height="955" alt="User Management" src="https://github.com/user-attachments/assets/a7efe7df-a2c1-4672-8484-1ec1ba5c3cd6" />
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/518eb428-49c5-433e-816c-44349fcf6b78" />
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/df82ebc6-756e-46d6-937d-97ece6f3d74c" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/f8c5943a-69d9-4cf6-b917-d942d5dbed62" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/a3606e29-ae97-4e90-b167-09ff691d5093" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/6768a017-0c7d-4ae3-85f9-ae9570c3d891" />
+
 
 **User Management Interface**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/cab3238b-da2e-49b9-8765-54b2b8ebb669" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/93e17be0-8aaf-4034-8914-7e7c4d1e5494" />
 
 **Roles & Permissions**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/0aef4108-1a7c-4a28-80ec-0d149e727796" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/2b65106d-4e3f-4d41-8036-c3e26d35ca5b" />
 
 **Roles Management**
-<img width="1912" height="1157" alt="image" src="https://github.com/user-attachments/assets/f30d4660-f828-47cf-ad41-cafc7eb8bf1d" />
-<img width="1912" height="1157" alt="image" src="https://github.com/user-attachments/assets/66a732d8-0c94-4af4-97cb-5117234fc313" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/abca555f-a8d1-4737-9a8f-32ff4f995e02" />
 
 **Permissions Management**
-<img width="1912" height="1157" alt="image" src="https://github.com/user-attachments/assets/1dca987d-3633-45ab-84a6-9e47390b46ac" />
-<img width="1912" height="1157" alt="image" src="https://github.com/user-attachments/assets/44b3bf05-94fc-46a0-976c-093742fc7029" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/d93fe4b9-74db-40e9-af55-d070f638ad90" />
 
 **Reports Analytics**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/4939b5ef-f90e-41ce-a44e-4c364d13e9a4" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/da02a39a-15e3-485e-bad9-46db9770c7da" />
 
 ## **Contact**
 For support or inquiries, contact the **Vanuatu Labour Registry** development team:
