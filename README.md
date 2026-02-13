@@ -424,7 +424,7 @@ NOTE: All data on these screenshots are dummy data
 <img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/93e17be0-8aaf-4034-8914-7e7c4d1e5494" />
 
 **Roles & Permissions**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/0aef4108-1a7c-4a28-80ec-0d149e727796" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/2b65106d-4e3f-4d41-8036-c3e26d35ca5b" />
 
 **Roles Management**
 <img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/abca555f-a8d1-4737-9a8f-32ff4f995e02" />
