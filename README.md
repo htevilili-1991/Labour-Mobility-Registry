@@ -394,7 +394,7 @@ NOTE: All data on these screenshots are dummy data
 <img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/fe3b3a4d-5085-4db9-8365-0dd6ae8222c0" />
 
 **Individual Record Edit Form**
-<img width="1919" height="1127" alt="image" src="https://github.com/user-attachments/assets/baebcb7e-3128-4bec-8704-ca2e27addfa8" />
+<img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/c2f5fca3-08c3-4be9-aefe-a9363f06216d" />
 
 ### CSV Upload Wizard
 **Step 1: File Selection with Drag-and-Drop**
