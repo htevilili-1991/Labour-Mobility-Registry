@@ -22,6 +22,18 @@ class DashboardController extends Controller
                 ->count();
             $uniqueNationalities = Registry::distinct('nationality')->count('nationality');
 
+            // Returnee metrics (records with return_date set)
+            $returnsBase = Registry::whereNotNull('return_date');
+            $returnsLast30 = (clone $returnsBase)->where('return_date', '>=', Carbon::now()->subDays(30))->count();
+            $returnsLast90 = (clone $returnsBase)->where('return_date', '>=', Carbon::now()->subDays(90))->count();
+            $returnsTotal = (clone $returnsBase)->count();
+            $returnsMatched = (clone $returnsBase)->where('match_status', 'matched')->count();
+            $returnsUnmatched = (clone $returnsBase)->where(function ($q) {
+                $q->whereNull('match_status')->orWhere('match_status', 'unmatched');
+            })->count();
+            $returnsPendingReview = (clone $returnsBase)->where('match_status', 'pending_review')->count();
+            $returnMatchRate = $returnsTotal > 0 ? round(($returnsMatched / $returnsTotal) * 100, 1) : 0;
+
             // Batches by status
             $batchesByStatus = RegistryBatch::select('status', DB::raw('COUNT(*) as count'))
                 ->groupBy('status')
@@ -119,6 +131,13 @@ class DashboardController extends Controller
                     'pending_verification' => $pendingVerification,
                     'approved_batches' => $approvedBatches,
                     'total_batches' => $totalBatches,
+                    'returns_last_30' => $returnsLast30,
+                    'returns_last_90' => $returnsLast90,
+                    'returns_total' => $returnsTotal,
+                    'returns_matched' => $returnsMatched,
+                    'returns_unmatched' => $returnsUnmatched,
+                    'returns_pending_review' => $returnsPendingReview,
+                    'return_match_rate' => $returnMatchRate,
                 ],
                 'monthly_records_travel' => $monthsTravel,
                 'travel_reason_records' => $travelReasonRecords,
@@ -141,6 +160,13 @@ class DashboardController extends Controller
                     'pending_verification' => 0,
                     'approved_batches' => 0,
                     'total_batches' => 0,
+                    'returns_last_30' => 0,
+                    'returns_last_90' => 0,
+                    'returns_total' => 0,
+                    'returns_matched' => 0,
+                    'returns_unmatched' => 0,
+                    'returns_pending_review' => 0,
+                    'return_match_rate' => 0,
                 ],
                 'monthly_records_travel' => [],
                 'travel_reason_records' => [],

@@ -25,6 +25,10 @@ import {
     LayoutGrid,
     BarChart3,
     Layers,
+    Plane,
+    Link2,
+    Unlink,
+    Clock,
 } from 'lucide-react';
 
 interface Registry {
@@ -51,6 +55,13 @@ interface Metrics {
     pending_verification: number;
     approved_batches: number;
     total_batches: number;
+    returns_last_30?: number;
+    returns_last_90?: number;
+    returns_total?: number;
+    returns_matched?: number;
+    returns_unmatched?: number;
+    returns_pending_review?: number;
+    return_match_rate?: number;
 }
 
 interface Props {
@@ -397,6 +408,84 @@ export default function Dashboard({
                     </Link>
                     </div>
                 </div>
+
+                {/* Section: Returnee Compliance */}
+                <div>
+                        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+                            Returnee Compliance
+                        </h2>
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <Link
+                                href="/reports/returnee-compliance"
+                                className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-sky-200 hover:shadow"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="rounded-lg bg-sky-50 p-2">
+                                        <Plane className="h-5 w-5 text-sky-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-900">Returns (30 days)</p>
+                                        <p className="text-2xl font-bold text-sky-600">{metrics.returns_last_30 ?? 0}</p>
+                                    </div>
+                                </div>
+                            </Link>
+                            <Link
+                                href="/reports/returnee-compliance"
+                                className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-sky-200 hover:shadow"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="rounded-lg bg-sky-50 p-2">
+                                        <Calendar className="h-5 w-5 text-sky-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-900">Returns (90 days)</p>
+                                        <p className="text-2xl font-bold text-sky-700">{metrics.returns_last_90 ?? 0}</p>
+                                    </div>
+                                </div>
+                            </Link>
+                            <Link
+                                href="/reports/returnee-compliance"
+                                className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-green-200 hover:shadow"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="rounded-lg bg-green-50 p-2">
+                                        <Link2 className="h-5 w-5 text-green-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-900">Match Rate</p>
+                                        <p className="text-2xl font-bold text-green-600">{metrics.return_match_rate ?? 0}%</p>
+                                    </div>
+                                </div>
+                            </Link>
+                            <Link
+                                href="/reports/returnee-compliance"
+                                className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-amber-200 hover:shadow"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="rounded-lg bg-amber-50 p-2">
+                                        <div className="flex items-center gap-1">
+                                            <Link2 className="h-4 w-4 text-green-500" />
+                                            <Unlink className="h-4 w-4 text-red-500" />
+                                            <Clock className="h-4 w-4 text-amber-500" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-900">Matched / Unmatched</p>
+                                        <p className="text-lg font-bold">
+                                            <span className="text-green-600">{metrics.returns_matched ?? 0}</span>
+                                            {' / '}
+                                            <span className="text-red-600">{metrics.returns_unmatched ?? 0}</span>
+                                            {((metrics.returns_pending_review ?? 0) > 0) && (
+                                                <span className="ml-1 text-xs text-amber-600">
+                                                    (+{metrics.returns_pending_review} pending)
+                                                </span>
+                                            )}
+                                        </p>
+                                    </div>
+                                </div>
+                            </Link>
+                        </div>
+                    </div>
 
                 {/* Section: Analytics */}
                 <div>

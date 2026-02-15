@@ -16,6 +16,17 @@ interface RegistryEntry {
     direction: string;
     border_post: string;
     created_at: string;
+    return_date?: string | null;
+    flight_number?: string | null;
+    match_status?: string | null;
+    reintegration_status?: string | null;
+    linkedOutbound?: {
+        id: number;
+        surname: string;
+        given_name: string;
+        document_no: string;
+        travel_date: string;
+    } | null;
 }
 
 interface RegistryBatch {
@@ -235,9 +246,20 @@ export default function BatchShow({ auth, batch, registryEntries }: Props) {
                                         <TableHead>Name</TableHead>
                                         <TableHead>Nationality</TableHead>
                                         <TableHead>Travel Date</TableHead>
+                                        {batch.batch_type === 'returns' && (
+                                            <>
+                                                <TableHead>Match</TableHead>
+                                                <TableHead>Linked Outbound</TableHead>
+                                                <TableHead>Reintegration</TableHead>
+                                                <TableHead>Flight</TableHead>
+                                            </>
+                                        )}
                                         <TableHead>Direction</TableHead>
                                         <TableHead>Border Post</TableHead>
                                         <TableHead>Added</TableHead>
+                                        {batch.batch_type === 'returns' && (
+                                            <TableHead className="text-right">Actions</TableHead>
+                                        )}
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -250,11 +272,48 @@ export default function BatchShow({ auth, batch, registryEntries }: Props) {
                                             <TableCell>
                                                 {new Date(entry.travel_date).toLocaleDateString()}
                                             </TableCell>
+                                            {batch.batch_type === 'returns' && (
+                                                <>
+                                                    <TableCell>
+                                                        <Badge
+                                                            variant={
+                                                                entry.match_status === 'matched'
+                                                                    ? 'default'
+                                                                    : entry.match_status === 'pending_review'
+                                                                      ? 'secondary'
+                                                                      : 'outline'
+                                                            }
+                                                        >
+                                                            {entry.match_status || 'unmatched'}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {entry.linkedOutbound
+                                                            ? `${entry.linkedOutbound.surname}, ${entry.linkedOutbound.given_name} (#${entry.linkedOutbound.document_no})`
+                                                            : '-'}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {entry.reintegration_status || '-'}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {entry.flight_number || '-'}
+                                                    </TableCell>
+                                                </>
+                                            )}
                                             <TableCell>{entry.direction}</TableCell>
                                             <TableCell>{entry.border_post}</TableCell>
                                             <TableCell>
                                                 {new Date(entry.created_at).toLocaleDateString()}
                                             </TableCell>
+                                            {batch.batch_type === 'returns' && (
+                                                <TableCell className="text-right">
+                                                    <Link href={`/registry/${entry.id}/edit`}>
+                                                        <Button variant="ghost" size="sm">
+                                                            Edit
+                                                        </Button>
+                                                    </Link>
+                                                </TableCell>
+                                            )}
                                         </TableRow>
                                     ))}
                                 </TableBody>

@@ -347,10 +347,11 @@ class RegistryController extends Controller
     public function edit(string $id)
     {
         try {
-            $registry = Registry::findOrFail($id);
+            $registry = Registry::with('linkedOutbound')->findOrFail($id);
 
             return Inertia::render('registry/edit', [
                 'registry' => $registry,
+                'reintegrationStatuses' => Registry::REINTEGRATION_STATUSES,
             ]);
         } catch (\Exception $e) {
             Log::error('Error fetching registry record for edit: '.$e->getMessage());
@@ -369,7 +370,7 @@ class RegistryController extends Controller
         try {
             Log::info('Update request data for Registry ID '.$id, $request->all());
             $registry = Registry::findOrFail($id);
-            $validated = $request->validate([
+            $rules = [
                 'surname' => 'required|string|max:255',
                 'given_name' => 'required|string|max:255',
                 'nationality' => 'required|string|max:255',
@@ -377,17 +378,20 @@ class RegistryController extends Controller
                 'national_id_number' => 'nullable|integer|unique:registry,national_id_number,'.($registry->national_id_number ?: 'NULL'),
                 'document_type' => 'required|string|max:255',
                 'document_no' => 'required|string|max:255|unique:registry,document_no,'.$registry->id,
-                'dob' => 'required|string|regex:/^\d{2}-\d{2}-\d{2}$/', // Validate MM-DD-YY
+                'dob' => 'required|string|regex:/^\d{2}-\d{2}-\d{2}$/',
                 'age' => 'required|integer|min:0',
                 'sex' => 'required|string|max:50',
-                'travel_date' => 'required|string|regex:/^\d{1,2}\/\d{1,2}\/\d{4}$/', // Validate D/M/YYYY or DD/MM/YYYY
+                'travel_date' => 'required|string|regex:/^\d{1,2}\/\d{1,2}\/\d{4}$/',
                 'direction' => 'required|string|max:255',
                 'accommodation_address' => 'required|string|max:255',
                 'note' => 'nullable|string|max:1000',
                 'travel_reason' => 'required|string|max:255',
                 'border_post' => 'required|string|max:255',
                 'destination_coming_from' => 'required|string|max:255',
-            ]);
+            ];
+            $rules['reintegration_status'] = 'nullable|string|in:'.implode(',', array_keys(Registry::REINTEGRATION_STATUSES));
+            $rules['self_reported_issues'] = 'nullable|string|max:2000';
+            $validated = $request->validate($rules);
             Log::info('Validated data for Registry ID '.$id, $validated);
             $registry->update($validated);
             Log::info('Registry record updated', ['id' => $registry->id, 'changes' => $registry->getChanges()]);

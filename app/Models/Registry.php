@@ -12,6 +12,13 @@ class Registry extends Model implements Auditable
     use HasFactory;
     use \OwenIt\Auditing\Auditable;
 
+    public const REINTEGRATION_STATUSES = [
+        'Pending' => 'Pending',
+        'In Progress' => 'In Progress',
+        'Completed' => 'Completed',
+        'No Support Needed' => 'No Support Needed',
+    ];
+
     protected $table = 'registry';
 
     protected $fillable = [

@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\RegistryBatch;
 use App\Models\Registry;
-use App\Models\VerificationAuditTrail;
+use App\Models\RegistryBatch;
 use App\Models\User;
+use App\Models\VerificationAuditTrail;
+use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Inertia\Inertia;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
+use Inertia\Inertia;
 
 class ReportsController extends Controller
 {
@@ -141,6 +140,86 @@ class ReportsController extends Controller
     }
 
     /**
+     * Get Returnee Compliance Summary report.
+     */
+    public function returneeComplianceReport(Request $request)
+    {
+        $period = $request->get('period', 'month');
+        $dateRange = $this->getDateRange($period);
+
+        $summary = $this->getReturneeComplianceSummary($dateRange);
+
+        return Inertia::render('Reports/ReturneeCompliance', [
+            'summary' => $summary,
+            'period' => $period,
+            'dateRange' => [
+                'start' => $dateRange['start']->toIso8601String(),
+                'end' => $dateRange['end']->toIso8601String(),
+            ],
+            'periods' => [
+                'day' => 'Last 24 Hours',
+                'week' => 'Last 7 Days',
+                'month' => 'Last 30 Days',
+                'quarter' => 'Last 3 Months',
+                'year' => 'Last 12 Months',
+            ],
+        ]);
+    }
+
+    /**
+     * Export Returnee Compliance report as CSV.
+     */
+    public function exportReturneeCompliance(Request $request)
+    {
+        $period = $request->get('period', 'month');
+        $dateRange = $this->getDateRange($period);
+        $summary = $this->getReturneeComplianceSummary($dateRange);
+
+        $filename = 'returnee_compliance_'.now()->format('Y-m-d').'.csv';
+
+        return response()->streamDownload(function () use ($summary) {
+            $handle = fopen('php://output', 'w');
+
+            // Summary section
+            fputcsv($handle, ['Returnee Compliance Summary', $summary['date_range']['start'] ?? '', 'to', $summary['date_range']['end'] ?? '']);
+            fputcsv($handle, []);
+            fputcsv($handle, ['Metric', 'Count']);
+            fputcsv($handle, ['Total Returns', $summary['total_returns']]);
+            fputcsv($handle, ['Matched to Outbound', $summary['matched']]);
+            fputcsv($handle, ['Unmatched', $summary['unmatched']]);
+            fputcsv($handle, ['Pending Review', $summary['pending_review']]);
+            fputcsv($handle, ['Match Rate (%)', $summary['match_rate']]);
+            fputcsv($handle, []);
+
+            // Reintegration status breakdown
+            fputcsv($handle, ['Reintegration Status', 'Count']);
+            foreach ($summary['by_reintegration_status'] as $status => $count) {
+                fputcsv($handle, [$status ?: 'Not Set', $count]);
+            }
+            fputcsv($handle, []);
+
+            // Detail rows
+            fputcsv($handle, ['ID', 'Surname', 'Given Name', 'Nationality', 'Return Date', 'Match Status', 'Reintegration Status', 'Flight Number']);
+            foreach ($summary['records'] as $r) {
+                fputcsv($handle, [
+                    $r['id'],
+                    $r['surname'],
+                    $r['given_name'],
+                    $r['nationality'],
+                    $r['return_date'],
+                    $r['match_status'] ?? 'unmatched',
+                    $r['reintegration_status'] ?? '',
+                    $r['flight_number'] ?? '',
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
+    /**
      * Export report data.
      */
     public function export(Request $request)
@@ -148,7 +227,7 @@ class ReportsController extends Controller
         $type = $request->get('type', 'verification');
         $format = $request->get('format', 'csv');
         $period = $request->get('period', 'month');
-        
+
         $dateRange = $this->getDateRange($period);
 
         switch ($type) {
@@ -169,7 +248,7 @@ class ReportsController extends Controller
     public function realTimeData(Request $request): JsonResponse
     {
         $dateRange = $this->getDateRange('day');
-        
+
         $realTimeStats = [
             'total_batches_today' => RegistryBatch::whereDate('created_at', today())->count(),
             'submitted_today' => RegistryBatch::whereDate('submitted_at', today())->count(),
@@ -184,10 +263,51 @@ class ReportsController extends Controller
         return response()->json($realTimeStats);
     }
 
+    private function getReturneeComplianceSummary($dateRange): array
+    {
+        $query = Registry::whereNotNull('return_date')
+            ->whereBetween('return_date', [$dateRange['start']->format('Y-m-d'), $dateRange['end']->format('Y-m-d')]);
+
+        $records = $query->orderBy('return_date', 'desc')
+            ->get(['id', 'surname', 'given_name', 'nationality', 'return_date', 'flight_number', 'match_status', 'reintegration_status']);
+
+        $total = $records->count();
+        $matched = $records->where('match_status', 'matched')->count();
+        $unmatched = $records->filter(fn ($r) => empty($r->match_status) || $r->match_status === 'unmatched')->count();
+        $pendingReview = $records->where('match_status', 'pending_review')->count();
+
+        $byReintegration = $records->groupBy('reintegration_status')
+            ->map(fn ($group) => $group->count())
+            ->toArray();
+
+        return [
+            'total_returns' => $total,
+            'matched' => $matched,
+            'unmatched' => $unmatched,
+            'pending_review' => $pendingReview,
+            'match_rate' => $total > 0 ? round(($matched / $total) * 100, 1) : 0,
+            'by_reintegration_status' => $byReintegration,
+            'records' => $records->map(fn ($r) => [
+                'id' => $r->id,
+                'surname' => $r->surname ?? '',
+                'given_name' => $r->given_name ?? '',
+                'nationality' => $r->nationality ?? '',
+                'return_date' => $r->return_date?->format('Y-m-d') ?? '',
+                'flight_number' => $r->flight_number,
+                'match_status' => $r->match_status,
+                'reintegration_status' => $r->reintegration_status,
+            ])->toArray(),
+            'date_range' => [
+                'start' => $dateRange['start']->format('Y-m-d'),
+                'end' => $dateRange['end']->format('Y-m-d'),
+            ],
+        ];
+    }
+
     private function getDateRange($period): array
     {
         $now = now();
-        
+
         switch ($period) {
             case 'day':
                 return ['start' => $now->copy()->startOfDay(), 'end' => $now->copy()->endOfDay()];
@@ -207,7 +327,7 @@ class ReportsController extends Controller
     private function getOverviewStats($dateRange, $scheme = null, $batchType = null): array
     {
         $query = RegistryBatch::whereBetween('created_at', [$dateRange['start'], $dateRange['end']]);
-        
+
         if ($scheme) {
             $query->where('scheme', $scheme);
         }
@@ -230,7 +350,7 @@ class ReportsController extends Controller
     private function getVerificationMetrics($dateRange, $scheme = null, $batchType = null): array
     {
         $query = RegistryBatch::whereBetween('created_at', [$dateRange['start'], $dateRange['end']]);
-        
+
         if ($scheme) {
             $query->where('scheme', $scheme);
         }
@@ -239,7 +359,7 @@ class ReportsController extends Controller
         }
 
         $totalCompleted = $query->whereIn('status', ['approved', 'rejected'])->count();
-        
+
         return [
             'avg_verification_time' => $this->getAverageVerificationTime($dateRange, $scheme, $batchType),
             'avg_approval_time' => $this->getAverageApprovalTime($dateRange, $scheme, $batchType),
@@ -253,7 +373,7 @@ class ReportsController extends Controller
     private function getComplianceMetrics($dateRange, $scheme = null, $batchType = null): array
     {
         $query = RegistryBatch::whereBetween('created_at', [$dateRange['start'], $dateRange['end']]);
-        
+
         if ($scheme) {
             $query->where('scheme', $scheme);
         }
@@ -263,7 +383,7 @@ class ReportsController extends Controller
 
         $totalBatches = $query->count();
         $approvedBatches = $query->where('status', 'approved')->count();
-        
+
         return [
             'compliance_rate' => $totalBatches > 0 ? ($approvedBatches / $totalBatches) * 100 : 0,
             'data_integrity_score' => $this->getDataIntegrityScore($dateRange),
@@ -290,7 +410,7 @@ class ReportsController extends Controller
     private function getTrendData($dateRange, $scheme = null, $batchType = null, $period = 'month'): array
     {
         $query = RegistryBatch::whereBetween('created_at', [$dateRange['start'], $dateRange['end']]);
-        
+
         if ($scheme) {
             $query->where('scheme', $scheme);
         }
@@ -299,11 +419,11 @@ class ReportsController extends Controller
         }
 
         $batches = $query->orderBy('created_at', 'desc')->get();
-        
+
         // Group by period using PHP
         $groupedData = [];
         foreach ($batches as $batch) {
-            $periodKey = match($period) {
+            $periodKey = match ($period) {
                 'day' => $batch->created_at->format('Y-m-d'),
                 'week' => $batch->created_at->format('Y-W'),
                 'month' => $batch->created_at->format('Y-m'),
@@ -311,8 +431,8 @@ class ReportsController extends Controller
                 'year' => $batch->created_at->format('Y'),
                 default => $batch->created_at->format('Y-m'),
             };
-            
-            if (!isset($groupedData[$periodKey])) {
+
+            if (! isset($groupedData[$periodKey])) {
                 $groupedData[$periodKey] = [
                     'period' => $periodKey,
                     'total' => 0,
@@ -326,20 +446,21 @@ class ReportsController extends Controller
                     'record_count_count' => 0,
                 ];
             }
-            
+
             $groupedData[$periodKey]['total']++;
             $groupedData[$periodKey][$batch->status]++;
             $groupedData[$periodKey]['record_count_sum'] += $batch->record_count;
             $groupedData[$periodKey]['record_count_count']++;
         }
-        
+
         // Calculate averages and format
         return array_values(array_map(function ($data) {
-            $data['avg_records'] = $data['record_count_count'] > 0 
-                ? round($data['record_count_sum'] / $data['record_count_count'], 2) 
+            $data['avg_records'] = $data['record_count_count'] > 0
+                ? round($data['record_count_sum'] / $data['record_count_count'], 2)
                 : 0;
-            
+
             unset($data['record_count_sum'], $data['record_count_count']);
+
             return $data;
         }, $groupedData));
     }
@@ -369,23 +490,23 @@ class ReportsController extends Controller
             'top_submitters' => User::withCount(['registryBatches' => function ($query) use ($dateRange) {
                 $query->whereBetween('created_at', [$dateRange['start'], $dateRange['end']]);
             }])
-            ->orderBy('registry_batches_count', 'desc')
-            ->limit(5)
-            ->get(),
-            
+                ->orderBy('registry_batches_count', 'desc')
+                ->limit(5)
+                ->get(),
+
             'top_verifiers' => User::withCount(['verifiedBatches' => function ($query) use ($dateRange) {
                 $query->whereBetween('verified_at', [$dateRange['start'], $dateRange['end']]);
             }])
-            ->orderBy('verified_batches_count', 'desc')
-            ->limit(5)
-            ->get(),
-            
+                ->orderBy('verified_batches_count', 'desc')
+                ->limit(5)
+                ->get(),
+
             'top_approvers' => User::withCount(['approvedBatches' => function ($query) use ($dateRange) {
                 $query->whereBetween('approved_at', [$dateRange['start'], $dateRange['end']]);
             }])
-            ->orderBy('approved_batches_count', 'desc')
-            ->limit(5)
-            ->get(),
+                ->orderBy('approved_batches_count', 'desc')
+                ->limit(5)
+                ->get(),
         ];
     }
 
@@ -394,7 +515,7 @@ class ReportsController extends Controller
         $query = RegistryBatch::whereNotNull('verified_at')
             ->whereNotNull('submitted_at')
             ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']]);
-            
+
         if ($scheme) {
             $query->where('scheme', $scheme);
         }
@@ -404,7 +525,7 @@ class ReportsController extends Controller
 
         $avgTime = $query->selectRaw('AVG(EXTRACT(EPOCH FROM (verified_at - submitted_at))/3600) as avg_hours')
             ->value('avg_hours');
-            
+
         return round($avgTime ?? 0, 2);
     }
 
@@ -413,7 +534,7 @@ class ReportsController extends Controller
         $query = RegistryBatch::whereNotNull('approved_at')
             ->whereNotNull('verified_at')
             ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']]);
-            
+
         if ($scheme) {
             $query->where('scheme', $scheme);
         }
@@ -423,22 +544,24 @@ class ReportsController extends Controller
 
         $avgTime = $query->selectRaw('AVG(EXTRACT(EPOCH FROM (approved_at - verified_at))/3600) as avg_hours')
             ->value('avg_hours');
-            
+
         return round($avgTime ?? 0, 2);
     }
 
     private function getDataIntegrityScore($dateRange): float
     {
         $totalBatches = RegistryBatch::whereBetween('created_at', [$dateRange['start'], $dateRange['end']])->count();
-        
-        if ($totalBatches === 0) return 100;
-        
+
+        if ($totalBatches === 0) {
+            return 100;
+        }
+
         $completeBatches = RegistryBatch::whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
             ->where('record_count', '>', 0)
             ->whereNotNull('period_start')
             ->whereNotNull('period_end')
             ->count();
-            
+
         return round(($completeBatches / $totalBatches) * 100, 2);
     }
 
@@ -446,24 +569,29 @@ class ReportsController extends Controller
     {
         $totalActions = RegistryBatch::whereBetween('created_at', [$dateRange['start'], $dateRange['end']])->count() * 2; // Estimate actions
         $auditEntries = VerificationAuditTrail::whereBetween('created_at', [$dateRange['start'], $dateRange['end']])->count();
-        
+
         return $totalActions > 0 ? round(($auditEntries / $totalActions) * 100, 2) : 100;
     }
 
     private function getTimelinessScore($dateRange): float
     {
         $avgTime = $this->getAverageVerificationTime($dateRange);
-        
+
         // Score based on SLA (24 hours = 100%, 48 hours = 50%, >48 hours = 0%)
-        if ($avgTime <= 24) return 100;
-        if ($avgTime <= 48) return round(100 - (($avgTime - 24) * 2.08), 2);
+        if ($avgTime <= 24) {
+            return 100;
+        }
+        if ($avgTime <= 48) {
+            return round(100 - (($avgTime - 24) * 2.08), 2);
+        }
+
         return max(0, round(100 - ($avgTime * 2.08), 2));
     }
 
     private function getThroughputMetrics($dateRange, $scheme = null, $batchType = null): array
     {
         $query = RegistryBatch::whereBetween('created_at', [$dateRange['start'], $dateRange['end']]);
-        
+
         if ($scheme) {
             $query->where('scheme', $scheme);
         }
@@ -472,7 +600,7 @@ class ReportsController extends Controller
         }
 
         $days = $dateRange['start']->diffInDays($dateRange['end']) + 1;
-        
+
         return [
             'batches_per_day' => round($query->count() / $days, 2),
             'records_per_day' => round($query->sum('record_count') / $days, 2),
@@ -511,15 +639,15 @@ class ReportsController extends Controller
     private function getDetailedVerificationMetrics($batches): array
     {
         $completedBatches = $batches->whereIn('status', ['approved', 'rejected']);
-        
+
         $metrics = [
             'avg_verification_time' => $this->getAverageVerificationTime(['start' => now()->subMonth(), 'end' => now()]),
             'avg_approval_time' => $this->getAverageApprovalTime(['start' => now()->subMonth(), 'end' => now()]),
-            'approval_rate' => $completedBatches->count() > 0 
-                ? ($completedBatches->where('status', 'approved')->count() / $completedBatches->count()) * 100 
+            'approval_rate' => $completedBatches->count() > 0
+                ? ($completedBatches->where('status', 'approved')->count() / $completedBatches->count()) * 100
                 : 0,
-            'rejection_rate' => $completedBatches->count() > 0 
-                ? ($completedBatches->where('status', 'rejected')->count() / $completedBatches->count()) * 100 
+            'rejection_rate' => $completedBatches->count() > 0
+                ? ($completedBatches->where('status', 'rejected')->count() / $completedBatches->count()) * 100
                 : 0,
             'avg_batch_size' => $batches->avg('record_count'),
             'fastest_verification' => 0,
@@ -562,10 +690,10 @@ class ReportsController extends Controller
     private function getDetailedComplianceData($dateRange): array
     {
         $query = RegistryBatch::whereBetween('created_at', [$dateRange['start'], $dateRange['end']]);
-        
+
         $totalBatches = $query->count();
         $approvedBatches = $query->where('status', 'approved')->count();
-        
+
         return [
             'compliance_rate' => $totalBatches > 0 ? ($approvedBatches / $totalBatches) * 100 : 0,
             'data_integrity_score' => $this->getDataIntegrityScore($dateRange),
@@ -641,13 +769,13 @@ class ReportsController extends Controller
         $users = User::withCount(['registryBatches' => function ($query) use ($dateRange) {
             $query->whereBetween('created_at', [$dateRange['start'], $dateRange['end']]);
         }])->get();
-        
+
         $productivity = [];
         foreach ($users as $user) {
             $batches = $user->registryBatches()->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])->get();
             $totalRecords = $batches->sum('record_count');
             $avgTime = $batches->count() > 0 ? 2.5 : 0; // Placeholder
-            
+
             $productivity[] = [
                 'user' => $user->name,
                 'batches_processed' => $user->registry_batches_count,
@@ -655,7 +783,7 @@ class ReportsController extends Controller
                 'avg_time_per_batch' => $avgTime,
             ];
         }
-        
+
         return array_slice($productivity, 0, 10);
     }
 
@@ -663,7 +791,7 @@ class ReportsController extends Controller
     {
         $totalUsers = User::count();
         $avgProductivity = 15.5; // Placeholder
-        
+
         return [
             'total_users' => $totalUsers,
             'avg_productivity' => $avgProductivity,
@@ -686,7 +814,7 @@ class ReportsController extends Controller
             'stage' => 'Verification Process',
             'avg_time' => 24.5,
             'impact' => 'medium',
-            'recommendation' => 'Implement automated verification checks to reduce processing time'
+            'recommendation' => 'Implement automated verification checks to reduce processing time',
         ];
     }
 
@@ -696,7 +824,7 @@ class ReportsController extends Controller
             'stage' => 'Approval Process',
             'avg_time' => 48.2,
             'impact' => 'high',
-            'recommendation' => 'Streamline approval workflow and add more approvers'
+            'recommendation' => 'Streamline approval workflow and add more approvers',
         ];
     }
 
@@ -706,7 +834,7 @@ class ReportsController extends Controller
             'stage' => 'Data Entry',
             'avg_time' => 12.1,
             'impact' => 'low',
-            'recommendation' => 'Provide better templates and validation for data entry'
+            'recommendation' => 'Provide better templates and validation for data entry',
         ];
     }
 
@@ -716,7 +844,7 @@ class ReportsController extends Controller
         // Generate sample monthly compliance data
         $months = [];
         $current = $dateRange['start']->copy();
-        
+
         while ($current <= $dateRange['end']) {
             $months[] = [
                 'period' => $current->format('Y-m'),
@@ -726,7 +854,7 @@ class ReportsController extends Controller
             ];
             $current->addMonth();
         }
-        
+
         return $months;
     }
 
@@ -734,14 +862,14 @@ class ReportsController extends Controller
     {
         $schemes = ['RSE', 'SWP', 'PALM'];
         $schemeData = [];
-        
+
         foreach ($schemes as $scheme) {
             $query = RegistryBatch::where('scheme', $scheme)
                 ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']]);
-            
+
             $total = $query->count();
             $approved = $query->where('status', 'approved')->count();
-            
+
             $schemeData[] = [
                 'scheme' => $scheme,
                 'compliance_rate' => $total > 0 ? ($approved / $total) * 100 : 0,
@@ -749,7 +877,7 @@ class ReportsController extends Controller
                 'approved_batches' => $approved,
             ];
         }
-        
+
         return $schemeData;
     }
 
@@ -761,30 +889,30 @@ class ReportsController extends Controller
                 'type' => 'Missing Data',
                 'count' => rand(0, 5),
                 'severity' => 'medium',
-                'description' => 'Batches with incomplete required fields'
+                'description' => 'Batches with incomplete required fields',
             ],
             [
                 'type' => 'Format Errors',
                 'count' => rand(0, 3),
                 'severity' => 'low',
-                'description' => 'Date formatting inconsistencies'
+                'description' => 'Date formatting inconsistencies',
             ],
             [
                 'type' => 'Late Submissions',
                 'count' => rand(0, 2),
                 'severity' => 'high',
-                'description' => 'Batches submitted after deadline'
+                'description' => 'Batches submitted after deadline',
             ],
         ];
-        
-        return array_filter($issues, fn($issue) => $issue['count'] > 0);
+
+        return array_filter($issues, fn ($issue) => $issue['count'] > 0);
     }
 
     private function getMonthlyPerformanceData($dateRange): array
     {
         $months = [];
         $current = $dateRange['start']->copy();
-        
+
         while ($current <= $dateRange['end']) {
             $months[] = [
                 'period' => $current->format('Y-m'),
@@ -794,7 +922,7 @@ class ReportsController extends Controller
             ];
             $current->addMonth();
         }
-        
+
         return $months;
     }
 }

@@ -58,6 +58,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/verification', [ReportsController::class, 'verificationReport'])->name('reports.verification');
         Route::get('/compliance', [ReportsController::class, 'complianceReport'])->name('reports.compliance');
         Route::get('/performance', [ReportsController::class, 'performanceReport'])->name('reports.performance');
+        Route::get('/returnee-compliance', [ReportsController::class, 'returneeComplianceReport'])->name('reports.returnee-compliance');
+        Route::get('/returnee-compliance/export', [ReportsController::class, 'exportReturneeCompliance'])->name('reports.returnee-compliance.export');
         Route::get('/export', [ReportsController::class, 'export'])->name('reports.export');
         Route::get('/real-time', [ReportsController::class, 'realTimeData'])->name('reports.realtime');
     });

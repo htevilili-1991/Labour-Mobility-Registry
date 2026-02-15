@@ -23,6 +23,19 @@ interface Registry {
     travel_reason: string;
     border_post: string;
     destination_coming_from: string;
+    return_date?: string | null;
+    flight_number?: string | null;
+    linked_outbound_id?: number | null;
+    reintegration_status?: string | null;
+    self_reported_issues?: string | null;
+    match_status?: string | null;
+    linkedOutbound?: {
+        id: number;
+        surname: string;
+        given_name: string;
+        document_no: string;
+        travel_date: string;
+    } | null;
 }
 
 interface Props {
@@ -30,6 +43,7 @@ interface Props {
         user: User | null;
     };
     registry: Registry;
+    reintegrationStatuses: Record<string, string>;
 }
 
 // Breadcrumbs
@@ -44,7 +58,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Edit({ auth, registry }: Props) {
+export default function Edit({ auth, registry, reintegrationStatuses }: Props) {
     const { data, setData, put, errors } = useForm({
         surname: registry.surname,
         given_name: registry.given_name,
@@ -62,6 +76,8 @@ export default function Edit({ auth, registry }: Props) {
         travel_reason: registry.travel_reason,
         border_post: registry.border_post,
         destination_coming_from: registry.destination_coming_from,
+        reintegration_status: registry.reintegration_status ?? '',
+        self_reported_issues: registry.self_reported_issues ?? '',
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -306,6 +322,63 @@ export default function Edit({ auth, registry }: Props) {
                                 <p className="mt-1 text-sm text-red-600">{errors.destination_coming_from}</p>
                             )}
                         </div>
+                        {data.direction === 'Inbound' && (
+                            <>
+                                {registry.linkedOutbound && (
+                                    <div className="sm:col-span-2 rounded-md border border-gray-200 bg-gray-50 p-4">
+                                        <p className="text-sm font-medium text-gray-700">Matched Outbound Record</p>
+                                        <p className="mt-1 text-sm text-gray-600">
+                                            {registry.linkedOutbound.surname} {registry.linkedOutbound.given_name} –
+                                            Doc #{registry.linkedOutbound.document_no} – Travel:{' '}
+                                            {registry.linkedOutbound.travel_date}
+                                        </p>
+                                    </div>
+                                )}
+                                <div>
+                                    <label
+                                        htmlFor="reintegration_status"
+                                        className="block text-sm font-medium text-gray-700"
+                                    >
+                                        Reintegration Status
+                                    </label>
+                                    <select
+                                        id="reintegration_status"
+                                        value={data.reintegration_status}
+                                        onChange={e => setData('reintegration_status', e.target.value)}
+                                        className="mt-1 block w-full h-10 px-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                    >
+                                        <option value="">Select status…</option>
+                                        {Object.entries(reintegrationStatuses).map(([value, label]) => (
+                                            <option key={value} value={value}>
+                                                {label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {errors.reintegration_status && (
+                                        <p className="mt-1 text-sm text-red-600">{errors.reintegration_status}</p>
+                                    )}
+                                </div>
+                                <div className="sm:col-span-2">
+                                    <label
+                                        htmlFor="self_reported_issues"
+                                        className="block text-sm font-medium text-gray-700"
+                                    >
+                                        Self-reported Issues
+                                    </label>
+                                    <textarea
+                                        id="self_reported_issues"
+                                        value={data.self_reported_issues}
+                                        onChange={e => setData('self_reported_issues', e.target.value)}
+                                        className="mt-1 block w-full h-24 px-3 py-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                        rows={4}
+                                        placeholder="Issues or concerns reported by the returnee…"
+                                    />
+                                    {errors.self_reported_issues && (
+                                        <p className="mt-1 text-sm text-red-600">{errors.self_reported_issues}</p>
+                                    )}
+                                </div>
+                            </>
+                        )}
                         <div className="sm:col-span-2">
                             <div className="flex gap-4">
                                 <button

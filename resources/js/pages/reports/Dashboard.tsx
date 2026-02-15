@@ -159,6 +159,9 @@ export default function ReportsDashboard({
                             <Link href="/reports/performance">
                                 <Button variant="outline" size="sm">Performance</Button>
                             </Link>
+                            <Link href="/reports/returnee-compliance">
+                                <Button variant="outline" size="sm">Returnee Compliance</Button>
+                            </Link>
                         </div>
                     }
                 />

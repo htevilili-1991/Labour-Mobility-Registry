@@ -83,7 +83,10 @@ class RegistryBatchController extends Controller
 
     public function show(RegistryBatch $batch)
     {
-        $batch->load(['submittedBy', 'verifiedBy', 'approvedBy', 'registryEntries']);
+        $batch->load([
+            'submittedBy', 'verifiedBy', 'approvedBy',
+            'registryEntries' => fn ($q) => $q->when($batch->batch_type === 'returns', fn ($q2) => $q2->with('linkedOutbound')),
+        ]);
 
         return Inertia::render('batches/Show', [
             'batch' => $batch,

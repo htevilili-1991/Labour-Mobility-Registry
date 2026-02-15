@@ -1,0 +1,413 @@
+# Labour Mobility Registry – User Manual
+
+**Version 1.0** | For end users: Admin, VBoS Staff, and Labour Department Staff
+
+---
+
+## Table of Contents
+
+1. [Introduction](#1-introduction)
+2. [User Roles Overview](#2-user-roles-overview)
+3. [Getting Started](#3-getting-started)
+4. [Dashboard](#4-dashboard)
+5. [Registry](#5-registry)
+6. [Batches](#6-batches)
+7. [Upload Wizard](#7-upload-wizard)
+8. [Verification (Labour Staff)](#8-verification-labour-staff)
+9. [Reports](#9-reports)
+10. [Settings](#10-settings)
+11. [Returnee Workflow](#11-returnee-workflow)
+12. [Appendix](#12-appendix)
+
+---
+
+## 1. Introduction
+
+The **Labour Mobility Registry** is a web application used by the Vanuatu government to manage labour movement data. It tracks workers departing and returning under schemes such as RSE, SWP, and PALM, and supports verification and compliance workflows.
+
+### Key concepts
+
+- **Registry**: The master list of individuals (workers) with travel and identity information.
+- **Batch**: A group of registry entries submitted together for verification (e.g. “January 2026 RSE Departures”).
+- **Verification**: Labour Department staff review submitted batches before approval.
+- **Returnee**: A worker who has returned; their record may be linked to their original outbound record.
+
+---
+
+## 2. User Roles Overview
+
+| Role | Description | Typical Access |
+|------|-------------|----------------|
+| **Admin / Super Admin** | Full system access; manages users, roles, audits, and settings. | All features |
+| **VBoS Data Entry** | Vanuatu Bureau of Statistics staff – data entry and batch preparation. | Registry, Batches, Upload, Export, Reports |
+| **Labour Verification** | Labour Department staff – verifies and approves batches. | Registry (view), Batches (view/verify/approve), Reports |
+| **Labour Oversight** | Labour senior staff – oversight, user roles, and reporting. | Verification + user role management, audits, reports |
+| **Manager** | Manages registry and reports. | Registry, Reports (no batch verification) |
+| **Viewer** | Read-only access. | Registry (view/export), Reports |
+| **Data Entry** | Limited data entry. | Registry (view/create/edit) |
+
+---
+
+## 3. Getting Started
+
+### Logging in
+
+1. Open the application in your web browser.
+2. Enter your **email** and **password**.
+3. Click **Log in**.
+4. If you forget your password, use the **Forgot your password?** link (if enabled).
+
+### After login
+
+You are taken to the **Dashboard**, which shows:
+
+- Quick links to Registry, Batches, Verification, and Reports
+- High-level statistics (total records, this month, nationalities, pending verification)
+- Batch workflow summary (draft, awaiting review, approved)
+- Returnee compliance metrics (if applicable)
+- Charts and recent activity
+
+---
+
+## 4. Dashboard
+
+The Dashboard gives an overview of system activity.
+
+### Quick links
+
+- **Registry**: View and manage all registry entries.
+- **Batches**: View and manage batches.
+- **Verification**: See batches awaiting verification (Labour staff).
+- **Reports**: View reports and analytics.
+- **Upload Data**: Go to the upload wizard.
+
+### Metrics
+
+- **Total Records** – All registry entries.
+- **This Month** – Records created in the current month.
+- **Nationalities** – Number of unique nationalities.
+- **Pending Verification** – Batches submitted or under review.
+- **Returnee Compliance** (if available):
+  - Returns (30 days / 90 days)
+  - Match rate (returnees linked to outbound records)
+  - Matched vs Unmatched counts
+
+---
+
+## 5. Registry
+
+The Registry is the main list of all individuals tracked in the system.
+
+### Viewing records
+
+1. Go to **Registry** from the sidebar or Dashboard.
+2. Use the **search** box to search across name, nationality, document number, travel date, etc.
+3. Use **filters** (year, columns) to narrow results.
+4. Use **column headers** to sort.
+5. Use **pagination** to move through pages.
+
+### Viewing a single record
+
+- Click **View** on a row to see full details.
+
+### Editing a record
+
+1. Open a record (View) and click **Edit**, or go directly to **Registry** → select record → **Edit**.
+2. Update the fields (surname, given name, nationality, document info, travel details, etc.).
+3. For **Inbound** (returnee) records:
+   - **Reintegration Status**: Pending, In Progress, Completed, No Support Needed.
+   - **Self-reported Issues**: Free-text notes from the returnee.
+   - If linked to an outbound record, the linked outbound is shown.
+4. Click **Save**.
+
+### Bulk actions
+
+1. Select one or more records using the checkboxes.
+2. Choose an action from the toolbar:
+   - **Add to Batch**: Add selected entries to a draft batch.
+   - **Export to CSV**: Export selected data (or use the main Export button for all filtered records).
+
+### Exporting
+
+- Click **Export to CSV** to download filtered registry data as a CSV file.
+
+---
+
+## 6. Batches
+
+Batches group registry entries for submission and verification.
+
+### Batch types
+
+- **Inbound** – Workers arriving
+- **Outbound** – Workers departing
+- **Earnings** – Earnings-related records
+- **Returns** – Returnees (workers who have returned)
+
+### Schemes
+
+- **RSE** – Recognised Seasonal Employer
+- **SWP** – Seasonal Worker Programme
+- **PALM** – Pacific Australia Labour Mobility
+
+### Creating a batch (empty)
+
+1. Go to **Batches**.
+2. Click **Create Batch**.
+3. Enter:
+   - **Batch Name** (e.g. “January 2026 RSE Departures”)
+   - **Scheme** (RSE, SWP, PALM)
+   - **Batch Type** (inbound, outbound, earnings, returns)
+   - **Period Start** and **Period End**
+   - **Description** (optional)
+4. Click **Create**.
+
+For CSV imports, use the **Upload Wizard** instead.
+
+### Adding entries to a batch
+
+1. Open **Registry** and select the records you want.
+2. Click **Add to Batch**.
+3. Choose a draft batch from the list.
+4. Confirm.
+
+Or:
+
+1. Open a draft batch (e.g. via **Batches**).
+2. Use the links to **Browse Registry** or **Upload CSV via Wizard** to add entries.
+
+### Batch workflow
+
+| Status | Description | Who can act |
+|--------|-------------|-------------|
+| **Draft** | Being prepared; entries can be added/removed | VBoS / Data Entry |
+| **Submitted** | Ready for verification | Labour Verification |
+| **Under Review** | Being verified | Labour Verification |
+| **Approved** | Accepted and locked | — |
+| **Rejected** | Rejected with reason | — |
+
+### Submitting a batch
+
+1. Open a **draft** batch.
+2. Ensure it has at least one entry.
+3. Click **Submit for Verification**.
+4. Confirm.
+
+The Labour Department verification team is notified and can review the batch.
+
+### Returns batches
+
+For **Returns** batches, the batch detail page shows extra columns:
+
+- **Match** – Matched, Unmatched, or Pending Review
+- **Linked Outbound** – The outbound record this returnee is linked to
+- **Reintegration Status**
+- **Flight Number**
+- **Edit** – Link to edit the registry record
+
+---
+
+## 7. Upload Wizard
+
+The Upload Wizard imports CSV data and creates batches.
+
+### Access
+
+Go to **Upload Data** (Dashboard or sidebar) or **Registry** → **Upload CSV via Wizard**.
+
+### Import modes
+
+1. **Standard Import** – General registry data (inbound, outbound, earnings).
+2. **Returnee Import** – Returnee data; the system tries to match returnees to existing outbound records.
+
+### Steps (Standard Import)
+
+1. **Select CSV File**
+   - Choose batch type and batch name.
+   - Upload a CSV file (drag-and-drop or browse).
+   - Preview rows and validation.
+
+2. **Validate Data**
+   - Review validation results.
+   - Fix errors in the built-in editor if needed.
+   - Check for duplicates.
+
+3. **Map Fields** (if headers differ)
+   - Map CSV columns to registry fields.
+
+4. **Create Batch**
+   - Confirm and create the batch with imported entries.
+
+### Returnee Import
+
+1. Choose **Returnee Import**.
+2. Upload a returnee CSV (columns can be flexible; the system maps common names).
+3. Run **Preview** to see suggested matches to outbound records.
+4. Review:
+   - **Matched** – Auto-linked to outbound.
+   - **Unmatched** – No match found.
+   - **Pending Review** – Possible match requiring manual check.
+5. Confirm and create a Returns batch.
+
+### CSV format (standard)
+
+Typical columns: `surname`, `given_name`, `nationality`, `country_of_residence`, `national_id_number`, `document_type`, `document_no`, `dob`, `age`, `sex`, `travel_date`, `direction`, `accommodation_address`, `note`, `travel_reason`, `border_post`, `destination_coming_from`.
+
+---
+
+## 8. Verification (Labour Staff)
+
+Labour Department staff verify and approve submitted batches.
+
+### Verification queue
+
+1. Go to **Verification**.
+2. Filter by scheme, batch type, status.
+3. View batches in **Submitted** or **Under Review**.
+
+### Reviewing a batch
+
+1. Open a submitted batch.
+2. Review batch details and registry entries.
+3. Use the verification checklist:
+   - Data completeness verified
+   - Cross-referenced with government records
+   - Other checklist items as configured.
+4. Add **verification notes** and any **discrepancies**.
+5. Click **Verify** to move to **Under Review**.
+
+### Approving or rejecting
+
+1. When under review, click **Approve** or **Reject**.
+2. **Approve**: Add approval notes and confirm. Entries in the batch are locked.
+3. **Reject**: Enter a rejection reason. The batch returns to a rejected state and the submitter is informed.
+
+### Audit trail
+
+- Each batch has an **Audit Trail** showing actions (submitted, verified, approved/rejected), users, timestamps, and changes.
+
+---
+
+## 9. Reports
+
+The Reports section provides analytics and exports.
+
+### Access
+
+Go to **Reports** from the sidebar or Dashboard.
+
+### Report types
+
+- **Verification Report** – Verification and approval metrics.
+- **Compliance Report** – Compliance rates, data integrity, timeliness.
+- **Performance Report** – Throughput, efficiency, productivity.
+- **Returnee Compliance Summary** – Returnee metrics and match rates.
+
+### Returnee Compliance Summary
+
+1. Go to **Reports** → **Returnee Compliance**.
+2. Choose a **period** (day, week, month, quarter, year).
+3. View:
+   - Total returns
+   - Matched / Unmatched / Pending Review
+   - Match rate
+   - Reintegration status breakdown
+   - List of returnee records
+4. Click **Export CSV** to download the report.
+
+---
+
+## 10. Settings
+
+### Profile (all users)
+
+- Go to **Settings** → **Profile**.
+- Update name and email.
+
+### Password
+
+- Go to **Settings** → **Password**.
+- Change your password.
+
+### User management (Admin / Labour Oversight)
+
+- Go to **Settings** → **Users**.
+- Create, edit, or deactivate users.
+- Assign roles to users.
+
+### Roles and permissions (Admin)
+
+- Go to **Settings** → **Roles & Permissions**.
+- Manage roles and their permissions.
+
+### Cron jobs (Admin)
+
+- Go to **Settings** → **Cron Jobs**.
+- View and configure scheduled tasks (e.g. verification reminders).
+
+---
+
+## 11. Returnee Workflow
+
+Returnees are workers who have returned and are tracked separately with linking and reintegration fields.
+
+### Returnee fields
+
+- **Return Date** – Date of return
+- **Flight Number** – Return flight
+- **Linked Outbound** – Matched outbound record
+- **Match Status** – Matched, Unmatched, or Pending Review
+- **Reintegration Status** – Pending, In Progress, Completed, No Support Needed
+- **Self-reported Issues** – Text notes from the returnee
+
+### Importing returnees
+
+1. Use the **Upload Wizard** in **Returnee Import** mode.
+2. Upload a CSV; the system attempts to match returnees to outbound records.
+3. Create a Returns batch.
+4. Labour Verification staff are notified when returnees are matched.
+
+### Editing returnee records
+
+1. Open a registry record with direction **Inbound** (from a Returns batch).
+2. Click **Edit**.
+3. Update **Reintegration Status** and **Self-reported Issues**.
+4. Save.
+
+---
+
+## 12. Appendix
+
+### Glossary
+
+| Term | Definition |
+|------|------------|
+| Batch | A group of registry entries submitted together for verification |
+| Scheme | Labour programme (RSE, SWP, PALM) |
+| VBoS | Vanuatu Bureau of Statistics |
+| Outbound | Worker departing (leaving) |
+| Inbound | Worker arriving (returning) |
+| Returnee | Worker who has returned under a scheme |
+
+### Batch statuses
+
+- **Draft**: Preparation in progress.
+- **Submitted**: Waiting for verification.
+- **Under Review**: Being verified by Labour staff.
+- **Approved**: Verified and locked.
+- **Rejected**: Rejected with a reason.
+
+### Reintegration statuses
+
+- **Pending** – Awaiting support
+- **In Progress** – Support underway
+- **Completed** – Support finished
+- **No Support Needed** – No support required
+
+### Support
+
+For technical support or access issues, contact your system administrator.
+
+---
+
+*End of User Manual*
