@@ -194,10 +194,10 @@ export default function UserManagement() {
 
                     <Card className="mb-6">
                         <CardHeader>
-                            <CardTitle>Advanced Role Management</CardTitle>
+                            <CardTitle className="dark:text-gray-100">Advanced Role Management</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-gray-600 mb-4">
+                            <p className="mb-4 text-gray-600">
                                 For advanced role and permission management, visit the dedicated Roles & Permissions section.
                             </p>
                             <Link href="/settings/roles-permissions">
@@ -208,8 +208,8 @@ export default function UserManagement() {
                         </CardContent>
                     </Card>
                     {users && users.length > 0 ? (
-                        <div className="overflow-x-auto max-w-full">
-                            <table className="min-w-full bg-white border border-gray-200">
+                        <div className="max-w-full overflow-x-auto">
+                            <table className="min-w-full border border-gray-200 bg-white">
                                 <thead>
                                 <tr>
                                     <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Name</th>
@@ -220,9 +220,9 @@ export default function UserManagement() {
                                 </thead>
                                 <tbody>
                                 {users.map((user) => (
-                                    <tr key={user.id} className="border-t">
+                                    <tr key={user.id} className="border-t border-gray-200">
                                         <td className="px-4 py-2 text-sm text-gray-900">{user.name}</td>
-                                        <td className="px-4 py-2 text-sm text-gray-900 max-w-xs overflow-hidden text-ellipsis whitespace-nowrap">
+                                        <td className="max-w-xs overflow-hidden text-ellipsis whitespace-nowrap px-4 py-2 text-sm text-gray-900">
                                             {user.email}
                                         </td>
                                         <td className="px-4 py-2 text-sm text-gray-900">

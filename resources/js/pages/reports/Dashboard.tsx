@@ -338,25 +338,25 @@ export default function ReportsDashboard({
                                     <CardTitle>Compliance Metrics</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center text-foreground">
                                         <span>Compliance Rate</span>
                                         <Badge className={getStatusColor(complianceMetrics.compliance_rate)}>
                                             {complianceMetrics.compliance_rate?.toFixed(1) ?? '0'}%
                                         </Badge>
                                     </div>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center text-foreground">
                                         <span>Data Integrity Score</span>
                                         <Badge className={getStatusColor(complianceMetrics.data_integrity_score, 'score')}>
                                             {complianceMetrics.data_integrity_score?.toFixed(1) ?? '0'}%
                                         </Badge>
                                     </div>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center text-foreground">
                                         <span>Audit Trail Coverage</span>
                                         <Badge className={getStatusColor(complianceMetrics.audit_trail_coverage, 'score')}>
                                             {complianceMetrics.audit_trail_coverage?.toFixed(1) ?? '0'}%
                                         </Badge>
                                     </div>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center text-foreground">
                                         <span>Timeliness Score</span>
                                         <Badge className={getStatusColor(complianceMetrics.timeliness_score, 'score')}>
                                             {complianceMetrics.timeliness_score?.toFixed(1) ?? '0'}%
@@ -369,15 +369,15 @@ export default function ReportsDashboard({
                                     <CardTitle>Quality Metrics</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center text-foreground">
                                         <span>Complete Batches</span>
                                         <span className="font-semibold">{complianceMetrics.quality_metrics.complete_batches}</span>
                                     </div>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center text-foreground">
                                         <span>Properly Formatted</span>
                                         <span className="font-semibold">{complianceMetrics.quality_metrics.properly_formatted}</span>
                                     </div>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center text-foreground">
                                         <span>With Descriptions</span>
                                         <span className="font-semibold">{complianceMetrics.quality_metrics.with_descriptions}</span>
                                     </div>
@@ -393,15 +393,15 @@ export default function ReportsDashboard({
                                     <CardTitle>Throughput</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-2">
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center text-foreground">
                                         <span>Batches per Day</span>
                                         <span className="font-semibold">{performanceMetrics.throughput.batches_per_day}</span>
                                     </div>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center text-foreground">
                                         <span>Records per Day</span>
                                         <span className="font-semibold">{performanceMetrics.throughput.records_per_day}</span>
                                     </div>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center text-foreground">
                                         <span>Peak Day</span>
                                         <span className="font-semibold">{performanceMetrics.throughput.peak_day.date}</span>
                                     </div>
@@ -412,15 +412,15 @@ export default function ReportsDashboard({
                                     <CardTitle>Efficiency</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-2">
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center text-foreground">
                                         <span>Automation Rate</span>
                                         <span className="font-semibold">{performanceMetrics.efficiency.automation_rate}%</span>
                                     </div>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center text-foreground">
                                         <span>Error Rate</span>
                                         <span className="font-semibold">{performanceMetrics.efficiency.error_rate}%</span>
                                     </div>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center text-foreground">
                                         <span>Rework Rate</span>
                                         <span className="font-semibold">{performanceMetrics.efficiency.rework_rate}%</span>
                                     </div>
@@ -437,8 +437,8 @@ export default function ReportsDashboard({
                             <CardContent>
                                 <div className="space-y-2">
                                     {trends.map((trend, index) => (
-                                        <div key={index} className="flex items-center justify-between p-2 border rounded">
-                                            <span className="text-sm font-medium">{new Date(trend.period).toLocaleDateString()}</span>
+                                        <div key={index} className="flex items-center justify-between p-2 border border-gray-200 rounded">
+                                            <span className="text-sm font-medium text-foreground">{new Date(trend.period).toLocaleDateString()}</span>
                                             <div className="flex gap-2 text-sm">
                                                 <Badge variant="outline">{trend.total} total</Badge>
                                                 <Badge className="bg-blue-100 text-blue-800">{trend.submitted} submitted</Badge>
@@ -467,7 +467,7 @@ export default function ReportsDashboard({
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
                                                 <Badge variant="outline">{activity.action}</Badge>
-                                                <span className="text-sm font-medium">{activity.user}</span>
+                                                <span className="text-sm font-medium text-foreground">{activity.user}</span>
                                             </div>
                                             <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
                                             {activity.batch && (
@@ -498,8 +498,8 @@ export default function ReportsDashboard({
                                 <TabsContent value="submitters">
                                     <div className="space-y-2">
                                         {topPerformers.top_submitters.map((user, index) => (
-                                            <div key={user.id} className="flex justify-between items-center p-2 border rounded">
-                                                <span className="text-sm font-medium">{index + 1}. {user.name}</span>
+                                            <div key={user.id} className="flex justify-between items-center p-2 border border-gray-200 rounded">
+                                                <span className="text-sm font-medium text-foreground">{index + 1}. {user.name}</span>
                                                 <Badge variant="outline">{user.registry_batches_count} batches</Badge>
                                             </div>
                                         ))}
@@ -509,8 +509,8 @@ export default function ReportsDashboard({
                                 <TabsContent value="verifiers">
                                     <div className="space-y-2">
                                         {topPerformers.top_verifiers.map((user, index) => (
-                                            <div key={user.id} className="flex justify-between items-center p-2 border rounded">
-                                                <span className="text-sm font-medium">{index + 1}. {user.name}</span>
+                                            <div key={user.id} className="flex justify-between items-center p-2 border border-gray-200 rounded">
+                                                <span className="text-sm font-medium text-foreground">{index + 1}. {user.name}</span>
                                                 <Badge variant="outline">{user.verified_batches_count} verified</Badge>
                                             </div>
                                         ))}
@@ -520,8 +520,8 @@ export default function ReportsDashboard({
                                 <TabsContent value="approvers">
                                     <div className="space-y-2">
                                         {topPerformers.top_approvers.map((user, index) => (
-                                            <div key={user.id} className="flex justify-between items-center p-2 border rounded">
-                                                <span className="text-sm font-medium">{index + 1}. {user.name}</span>
+                                            <div key={user.id} className="flex justify-between items-center p-2 border border-gray-200 rounded">
+                                                <span className="text-sm font-medium text-foreground">{index + 1}. {user.name}</span>
                                                 <Badge variant="outline">{user.approved_batches_count} approved</Badge>
                                             </div>
                                         ))}

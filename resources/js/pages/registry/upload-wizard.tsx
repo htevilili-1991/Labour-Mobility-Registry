@@ -506,10 +506,10 @@ const UploadWizard: React.FC = () => {
         const hasError = isStepHasError(stepIndex);
         const completed = isStepCompleted(stepIndex);
         const isCurrent = currentStep === stepIndex + 1;
-        if (hasError) return 'bg-red-50 border-red-400';
-        if (completed) return 'bg-green-50 border-green-300';
-        if (isCurrent) return 'bg-blue-50 border-blue-300';
-        return 'bg-gray-50 border-gray-200';
+        if (hasError) return 'border-red-400 bg-red-50';
+        if (completed) return 'border-green-300 bg-green-50';
+        if (isCurrent) return 'border-blue-300 bg-blue-50';
+        return 'border-gray-200 bg-gray-50';
     };
 
     // Current step is valid (no errors) — show Next/Continue/Submit button
@@ -528,24 +528,24 @@ const UploadWizard: React.FC = () => {
     return (
         <AppLayout auth={auth} breadcrumbs={breadcrumbs}>
             <Head title="Upload Registry Data - Wizard" />
-            <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 py-12">
-                <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
-                    <div className="p-6 bg-white border-b border-gray-200">
-                        <div className="flex justify-between items-center mb-6">
-                            <h1 className="text-2xl font-bold">Upload Registry Data - Wizard</h1>
+            <div className="mx-auto max-w-7xl py-12 sm:px-6 lg:px-8">
+                <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                    <div className="border-b border-gray-200 bg-white p-6">
+                        <div className="mb-6 flex items-center justify-between">
+                            <h1 className="text-2xl font-bold text-gray-900">Upload Registry Data - Wizard</h1>
                             <div className="flex items-center gap-2">
                                 <Badge variant="outline">Step {currentStep} of {steps.length}</Badge>
                             </div>
                         </div>
 
                         {success && (
-                            <div className="mb-4 p-4 bg-green-100 text-green-700 rounded">
+                            <div className="mb-4 rounded p-4 bg-green-100 text-green-700">
                                 {success}
                             </div>
                         )}
 
                         {errors?.csv_file && (
-                            <div className="mb-4 p-4 bg-red-100 text-red-700 rounded">
+                            <div className="mb-4 rounded p-4 bg-red-100 text-red-700">
                                 {errors.csv_file}
                             </div>
                         )}
@@ -578,7 +578,7 @@ const UploadWizard: React.FC = () => {
                                             }`}>
                                                 {step.title}
                                             </h3>
-                                            <p className="text-sm text-gray-600 mt-1">{step.description}</p>
+                                            <p className="mt-1 text-sm text-gray-600">{step.description}</p>
                                             {!unlocked && (
                                                 <span className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-gray-500">
                                                     Locked
@@ -615,10 +615,10 @@ const UploadWizard: React.FC = () => {
                                     <CardContent>
                                         <div className="space-y-4">
                                             {/* CSV Template Download - Prominent Position */}
-                                            <div className="p-4 bg-blue-100 border-2 border-blue-300 rounded-lg">
+                                            <div className="rounded-lg border-2 border-blue-300 bg-blue-100 p-4">
                                                 <div className="flex items-center justify-between">
                                                     <div>
-                                                        <h4 className="font-bold text-blue-900 mb-1 text-lg">📋 Need a CSV Template?</h4>
+                                                        <h4 className="mb-1 text-lg font-bold text-blue-900">📋 Need a CSV Template?</h4>
                                                         <p className="text-sm text-blue-800">Download our template to ensure your data is formatted correctly before uploading.</p>
                                                     </div>
                                                     <Button
@@ -652,7 +652,7 @@ Besv,Dom,PapuaNewGuinea,Australia,594375,National ID,9CQDZhJF,25/04/1995,30,Male
                                                 onDragOver={handleDragOver}
                                                 onDragLeave={handleDragLeave}
                                                 onDrop={handleDrop}
-                                                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                                                className={`rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
                                                     isDragging
                                                         ? 'border-blue-500 bg-blue-50'
                                                         : 'border-gray-300 bg-gray-50 hover:border-gray-400'
@@ -662,7 +662,7 @@ Besv,Dom,PapuaNewGuinea,Australia,594375,National ID,9CQDZhJF,25/04/1995,30,Male
                                                 <p className="text-lg font-medium mb-2">
                                                     {isDragging ? 'Drop CSV file here' : 'Drag and drop CSV file here'}
                                                 </p>
-                                                <p className="text-sm text-gray-500 mb-4">or</p>
+                                                <p className="mb-4 text-sm text-gray-500">or</p>
                                                 <Input
                                                     ref={fileInputRef}
                                                     type="file"
@@ -681,8 +681,8 @@ Besv,Dom,PapuaNewGuinea,Australia,594375,National ID,9CQDZhJF,25/04/1995,30,Male
                                             </div>
                                             
                                             {csvPreview && (
-                                                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                                                    <h4 className="font-semibold mb-2">CSV Preview</h4>
+                                                <div className="mt-4 rounded-lg bg-gray-50 p-4">
+                                                    <h4 className="mb-2 font-semibold text-gray-900">CSV Preview</h4>
                                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                                         <div>
                                                             <span className="font-medium">Total Rows:</span>

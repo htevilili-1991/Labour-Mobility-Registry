@@ -157,7 +157,7 @@ export default function Audits({ audits }: Props) {
                         description="When you create, update, or delete registry entries, those actions will be recorded here."
                     />
                 ) : (
-                    <div className="border-sidebar-border/70 dark:border-sidebar-border overflow-x-auto rounded-xl border z-0">
+                    <div className="z-0 overflow-x-auto rounded-xl border border-gray-200">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                             {table.getHeaderGroups().map((headerGroup) => (
@@ -165,7 +165,7 @@ export default function Audits({ audits }: Props) {
                                     {headerGroup.headers.map((header) => (
                                         <th
                                             key={header.id}
-                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer"
                                             onClick={header.column.getToggleSortingHandler()}
                                         >
                                             {header.isPlaceholder
@@ -182,13 +182,13 @@ export default function Audits({ audits }: Props) {
                                 </tr>
                             ))}
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="divide-y divide-gray-200 bg-white">
                             {table.getRowModel().rows.map((row) => (
                                 <tr key={row.id} className="hover:bg-gray-50">
                                     {row.getVisibleCells().map((cell) => (
                                         <td
                                             key={cell.id}
-                                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                                            className="whitespace-nowrap px-6 py-4 text-sm text-gray-900"
                                         >
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </td>
@@ -197,7 +197,7 @@ export default function Audits({ audits }: Props) {
                             ))}
                             </tbody>
                         </table>
-                        <div className="flex items-center justify-between px-6 py-4">
+                        <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
                             <div className="flex items-center gap-2">
                                 <span className="text-sm text-gray-700">
                                     Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
@@ -205,7 +205,7 @@ export default function Audits({ audits }: Props) {
                                 <select
                                     value={table.getState().pagination.pageSize}
                                     onChange={(e) => table.setPageSize(Number(e.target.value))}
-                                    className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1 text-sm"
+                                    className="rounded-md border border-gray-300 bg-white p-1 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                 >
                                     {[10, 25, 50].map((pageSize) => (
                                         <option key={pageSize} value={pageSize}>

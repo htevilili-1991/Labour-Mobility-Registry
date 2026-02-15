@@ -355,7 +355,7 @@ export default function Dashboard({
                     <div className="grid gap-4 sm:grid-cols-3">
                     <Link
                         href="/batches"
-                        className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-blue-200 hover:shadow"
+                        className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-blue-200 hover:shadow"
                     >
                         <div className="flex items-center gap-3">
                             <div className="rounded-lg bg-gray-100 p-2">
@@ -369,7 +369,7 @@ export default function Dashboard({
                     </Link>
                     <Link
                         href="/verification"
-                        className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-amber-200 hover:shadow"
+                        className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-amber-200 hover:shadow"
                     >
                         <div className="flex items-center gap-3">
                             <div className="rounded-lg bg-amber-50 p-2">
@@ -383,7 +383,7 @@ export default function Dashboard({
                     </Link>
                     <Link
                         href="/batches"
-                        className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-green-200 hover:shadow"
+                        className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-green-200 hover:shadow"
                     >
                         <div className="flex items-center gap-3">
                             <div className="rounded-lg bg-green-50 p-2">
@@ -557,7 +557,7 @@ export default function Dashboard({
                         </Link>
                     </CardHeader>
                     <CardContent>
-                        {recent_records.length === 0 ? (
+                                        {recent_records.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-12 text-gray-500">
                                 <Users className="mb-4 h-12 w-12 text-gray-300" />
                                 <p className="text-sm">No records yet</p>

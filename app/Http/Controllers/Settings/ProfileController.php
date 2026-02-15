@@ -105,14 +105,6 @@ class ProfileController extends Controller
     }
 
     /**
-     * Show the appearance settings page.
-     */
-    public function showAppearance(): Response
-    {
-        return Inertia::render('Settings/Appearance');
-    }
-
-    /**
      * Show the user management page (admin-only).
      */
     public function showUserManagement(): Response

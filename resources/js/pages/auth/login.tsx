@@ -46,7 +46,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
             {/* Status Message */}
             {status && (
-                <div className="mb-6 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
+                <div className="mb-6 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
                     <Shield className="h-5 w-5 shrink-0" />
                     {status}
                 </div>
@@ -55,7 +55,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 {/* Email Field */}
                 <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-medium leading-none text-gray-700 dark:text-gray-300">
+                    <Label htmlFor="email" className="text-sm font-medium leading-none text-gray-700">
                         Email Address
                     </Label>
                     <Input
@@ -76,13 +76,13 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                 {/* Password Field */}
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                        <Label htmlFor="password" className="text-sm font-medium leading-none text-gray-700 dark:text-gray-300">
+                        <Label htmlFor="password" className="text-sm font-medium leading-none text-gray-700">
                             Password
                         </Label>
                         {canResetPassword && (
                             <TextLink
                                 href={route('password.request')}
-                                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                                className="text-sm text-blue-600 hover:text-blue-700"
                                 tabIndex={6}
                             >
                                 Forgot password?
@@ -106,7 +106,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             variant="ghost"
                             size="icon"
                             onClick={togglePasswordVisibility}
-                            className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                            className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                             tabIndex={3}
                         >
                             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -123,7 +123,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                         onCheckedChange={(checked) => setData('remember', !!checked)}
                         tabIndex={4}
                     />
-                    <Label htmlFor="remember" className="cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+                    <Label htmlFor="remember" className="cursor-pointer text-sm text-gray-700">
                         Remember me on this device
                     </Label>
                 </div>

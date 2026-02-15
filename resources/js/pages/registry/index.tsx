@@ -647,7 +647,7 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                             <DropdownMenuTrigger asChild>
                                 <Button
                                     variant="outline"
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                                    className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                                 >
                                     {selectedYears.includes('all') ? 'All Years' : selectedYears.join(', ') || 'Select Years'}
                                     <ChevronDownIcon className="ml-2 h-4 w-4" />
@@ -677,7 +677,7 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                             <DropdownMenuTrigger asChild>
                                 <Button
                                     variant="outline"
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                                    className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                                 >
                                     Columns <ChevronDownIcon className="ml-2 h-4 w-4" />
                                 </Button>
@@ -713,7 +713,7 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                         action={{ href: '/registry/upload-wizard', label: 'Upload Data' }}
                     />
                 ) : (
-                    <div className="border-gray-200 overflow-x-auto rounded-xl border z-0 bg-white">
+                    <div className="z-0 overflow-x-auto rounded-xl border border-gray-200 bg-white">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                             {table.getHeaderGroups().map((headerGroup) => (
@@ -741,13 +741,13 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                                 </tr>
                             ))}
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="divide-y divide-gray-200 bg-white">
                             {table.getRowModel().rows.map((row) => (
                                 <tr key={row.id} className="hover:bg-gray-50">
                                     {row.getVisibleCells().map((cell) => (
                                         <td
                                             key={cell.id}
-                                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                                            className="whitespace-nowrap px-6 py-4 text-sm text-gray-900"
                                         >
                                             {flexRender(
                                                 cell.column.columnDef.cell,
@@ -759,7 +759,7 @@ export default function Registry({ auth, registry, distinctYears, draftBatches =
                             ))}
                             </tbody>
                         </table>
-                        <div className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col gap-4 border-t border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-2">
                                 <span className="text-sm text-gray-600">
                                     Page {table.getState().pagination.pageIndex + 1} of{' '}
