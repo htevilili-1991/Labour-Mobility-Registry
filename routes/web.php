@@ -44,6 +44,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/audits', [AuditController::class, 'index'])->name('audits.index');
     Route::delete('/audits', [AuditController::class, 'clear'])->name('audits.clear');
 
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\NotificationController::class, 'index'])->name('index');
+        Route::post('/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('mark-all-read');
+        Route::post('/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markRead'])->name('mark-read');
+    });
+
     // Reports and Analytics routes
     Route::prefix('reports')->middleware('permission:reports.view')->group(function () {
         Route::get('/', [ReportsController::class, 'index'])->name('reports.dashboard');

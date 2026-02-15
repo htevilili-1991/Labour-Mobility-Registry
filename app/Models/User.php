@@ -18,7 +18,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'profile_emoji'
+        'profile_emoji',
     ];
 
     protected $hidden = [
@@ -96,7 +96,7 @@ class User extends Authenticatable
     {
         if (is_string($permission)) {
             $permission = Permission::where('name', $permission)->first();
-            if (!$permission) {
+            if (! $permission) {
                 return false;
             }
         }
@@ -121,11 +121,24 @@ class User extends Authenticatable
     public function hasAllPermissions(array $permissions): bool
     {
         foreach ($permissions as $permission) {
-            if (!$this->hasPermission($permission)) {
+            if (! $this->hasPermission($permission)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /**
+     * Scope to get users who have a given permission (via roles or direct assignment).
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<User>  $query
+     */
+    public function scopeWithPermission($query, string $permissionName)
+    {
+        return $query->where(function ($q) use ($permissionName) {
+            $q->whereHas('permissions', fn ($p) => $p->where('name', $permissionName))
+                ->orWhereHas('roles.permissions', fn ($p) => $p->where('name', $permissionName));
+        });
     }
 }

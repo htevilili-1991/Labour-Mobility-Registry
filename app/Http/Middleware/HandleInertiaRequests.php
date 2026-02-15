@@ -52,13 +52,18 @@ class HandleInertiaRequests extends Middleware
             ]);
         }
 
+        $unreadNotificationsCount = $user?->unreadNotifications()->count() ?? 0;
+        $isAdmin = $user && ($user->role === 'admin' || $user->hasRole('admin'));
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $user,
+                'is_admin' => $isAdmin,
                 'cache_bust' => now()->timestamp, // Force re-render
+                'unread_notifications_count' => $unreadNotificationsCount,
             ],
             'ziggy' => fn (): array => [
                 ...(new Ziggy)->toArray(),

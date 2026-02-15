@@ -7,14 +7,15 @@ import { Link, usePage } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
-    // Move usePage to the top level, before any return statements
-    const { auth } = usePage<SharedData>().props;
-    const isAdmin = auth.user.role === 'admin';
-
-    // When server-side rendering, we only render the layout on the client...
-    if (typeof window === 'undefined') {
-        return null;
-    }
+    const page = usePage<SharedData>();
+    const { auth } = page.props;
+    const url = page.url;
+    const isAdmin = auth?.is_admin === true || auth?.user?.role === 'admin';
+    const currentPath = (() => {
+        if (!url) return '';
+        const withoutQuery = url.replace(/\?.*$/, '');
+        return withoutQuery.startsWith('http') ? new URL(withoutQuery).pathname : withoutQuery;
+    })();
 
     const sidebarNavItems: NavItem[] = [
         {
@@ -39,11 +40,14 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                     href: '/settings/roles-permissions',
                     icon: null,
                 },
+                {
+                    title: 'Cron Jobs',
+                    href: '/settings/cron-jobs',
+                    icon: null,
+                },
             ]
             : []),
     ];
-
-    const currentPath = window.location.pathname;
 
     return (
         <div className="px-4 py-6 relative z-20">

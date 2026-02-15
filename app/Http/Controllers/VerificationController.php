@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\RegistryBatch;
-use App\Models\RegistryBatchApproval;
-use App\Models\VerificationAuditTrail;
+use App\Notifications\BatchApproved;
+use App\Notifications\BatchRejected;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -46,16 +46,16 @@ class VerificationController extends Controller
     public function show(RegistryBatch $batch)
     {
         $batch->load([
-            'submittedBy', 
-            'verifiedBy', 
-            'approvedBy', 
+            'submittedBy',
+            'verifiedBy',
+            'approvedBy',
             'registryEntries',
             'approvals' => function ($query) {
                 $query->with('user')->orderBy('created_at', 'desc');
             },
             'auditTrail' => function ($query) {
                 $query->with('user')->orderBy('action_at', 'desc');
-            }
+            },
         ]);
 
         return Inertia::render('Verification/Show', [
@@ -68,7 +68,7 @@ class VerificationController extends Controller
 
     public function verify(Request $request, RegistryBatch $batch)
     {
-        if (!$batch->canBeVerified()) {
+        if (! $batch->canBeVerified()) {
             return back()->with('error', 'This batch cannot be verified.');
         }
 
@@ -96,7 +96,7 @@ class VerificationController extends Controller
 
     public function approve(Request $request, RegistryBatch $batch)
     {
-        if (!$batch->canBeApproved()) {
+        if (! $batch->canBeApproved()) {
             return back()->with('error', 'This batch cannot be approved.');
         }
 
@@ -109,6 +109,11 @@ class VerificationController extends Controller
         ];
 
         $batch->approve($approvalData);
+        $batch->load(['submittedBy', 'approvedBy']);
+
+        if ($batch->submitted_by) {
+            $batch->submittedBy?->notify(new BatchApproved($batch, $approvalData['notes'] ?? null));
+        }
 
         return redirect()->route('verification.show', $batch)
             ->with('success', 'Batch approved and locked successfully.');
@@ -116,7 +121,7 @@ class VerificationController extends Controller
 
     public function reject(Request $request, RegistryBatch $batch)
     {
-        if (!$batch->canBeRejected()) {
+        if (! $batch->canBeRejected()) {
             return back()->with('error', 'This batch cannot be rejected.');
         }
 
@@ -125,6 +130,11 @@ class VerificationController extends Controller
         ]);
 
         $batch->reject($request->reason);
+        $batch->load(['submittedBy', 'approvedBy', 'verifiedBy']);
+
+        if ($batch->submitted_by) {
+            $batch->submittedBy?->notify(new BatchRejected($batch, $request->reason));
+        }
 
         return redirect()->route('verification.show', $batch)
             ->with('success', 'Batch rejected successfully.');

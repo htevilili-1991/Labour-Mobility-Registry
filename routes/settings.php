@@ -17,7 +17,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/settings/users', [ProfileController::class, 'storeUser'])->name('settings.users.store');
         Route::patch('/settings/users/{user}', [ProfileController::class, 'updateUser'])->name('settings.users.update');
         Route::delete('/settings/users/{user}', [ProfileController::class, 'destroyUser'])->name('settings.users.destroy');
-        
+
         Route::get('/settings/roles-permissions', [ProfileController::class, 'showRolesPermissions'])->name('settings.roles-permissions');
+        Route::get('/settings/cron-jobs', [\App\Http\Controllers\Settings\CronJobsController::class, 'index'])->name('settings.cron-jobs');
+        Route::put('/settings/cron-jobs/{scheduleConfig}', [\App\Http\Controllers\Settings\CronJobsController::class, 'update'])->name('settings.cron-jobs.update');
     });
 });

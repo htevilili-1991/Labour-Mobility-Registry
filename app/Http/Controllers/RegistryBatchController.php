@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Registry;
 use App\Models\RegistryBatch;
 use App\Models\User;
+use App\Notifications\BatchSubmittedForVerification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 
 class RegistryBatchController extends Controller
@@ -135,37 +135,16 @@ class RegistryBatchController extends Controller
         }
 
         $batch->submit();
+        $batch->load('submittedBy');
 
-        // Send email notification to verification staff
+        // Notify Labour Verification team via database notifications
         try {
-            $verificationStaff = User::whereHas('permissions', function ($query) {
-                $query->where('name', 'batches.verify');
-            })->orWhereHas('roles.permissions', function ($query) {
-                $query->where('name', 'batches.verify');
-            })->get();
-
+            $verificationStaff = User::withPermission('batches.verify')->get();
             foreach ($verificationStaff as $staff) {
-                try {
-                    Mail::raw(
-                        "A new batch '{$batch->name}' has been submitted for verification.\n\n".
-                        "Batch Details:\n".
-                        "- Scheme: {$batch->scheme}\n".
-                        "- Type: {$batch->batch_type}\n".
-                        "- Records: {$batch->record_count}\n".
-                        '- Submitted by: '.auth()->user()->name."\n\n".
-                        'Please review the batch at: '.route('verification.show', $batch),
-                        function ($message) use ($staff, $batch) {
-                            $message->to($staff->email)
-                                ->subject("New Batch Submitted for Verification: {$batch->name}");
-                        }
-                    );
-                } catch (\Exception $e) {
-                    Log::warning("Failed to send email notification to {$staff->email}: ".$e->getMessage());
-                }
+                $staff->notify(new BatchSubmittedForVerification($batch));
             }
         } catch (\Exception $e) {
             Log::error('Error sending batch submission notifications: '.$e->getMessage());
-            // Don't fail the submission if email fails
         }
 
         return redirect()->route('batches.show', $batch)

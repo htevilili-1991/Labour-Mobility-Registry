@@ -5,7 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { UserInfo } from '@/components/user-info';
-import { Bell, RefreshCw } from 'lucide-react';
+import { NotificationsDropdown } from '@/components/notifications-dropdown';
+import { RefreshCw } from 'lucide-react';
 import { type BreadcrumbItem as BreadcrumbItemType, type SharedData } from '@/types';
 import { usePage, router } from '@inertiajs/react';
 
@@ -27,10 +28,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
 
             {/* Right: notifications, refresh, profile */}
             <div className="flex shrink-0 items-center gap-1">
-                <button className="relative rounded-lg p-2 text-gray-600 transition-colors hover:bg-blue-100">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
-                </button>
+                <NotificationsDropdown />
                 <button
                     onClick={handleRefresh}
                     className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-blue-100"
