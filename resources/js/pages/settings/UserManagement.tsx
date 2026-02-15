@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import HeadingSmall from '@/components/heading-small';
-import DeleteUser from '@/components/delete-user';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -35,6 +34,7 @@ export default function UserManagement() {
     const flashMessage = flash?.success || flash?.error;
     const [open, setOpen] = useState(false);
     const [showAlert, setShowAlert] = useState(!!flashMessage);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
 
     const { data, setData, post, processing, errors, reset, delete: formDelete } = useForm({ // Renamed to formDelete
         name: '',
@@ -74,18 +74,11 @@ export default function UserManagement() {
         });
     };
 
-    const handleDelete = (userId: number, userName: string) => {
-        console.log('Delete button clicked for userId:', userId, 'userName:', userName);
-        DeleteUser.show({
-            userId,
-            userName,
-            onConfirm: () => {
-                console.log(`Deleted user ${userId} (${userName})`);
-                window.location.reload();
-            },
-            onCancel: () => {
-                console.log('Delete cancelled for user:', userId);
-            }
+    const handleDeleteConfirm = () => {
+        if (!deleteTarget) return;
+        router.delete(route('settings.users.destroy', deleteTarget.id), {
+            preserveScroll: true,
+            onSuccess: () => setDeleteTarget(null),
         });
     };
 
@@ -254,7 +247,7 @@ export default function UserManagement() {
                                             <Button
                                                 variant="destructive"
                                                 size="sm"
-                                                onClick={() => handleDelete(user.id)}
+                                                onClick={() => setDeleteTarget({ id: user.id, name: user.name })}
                                                 disabled={user.email === 'htevilili@vanuatu.gov.vu'}
                                             >
                                                 Delete
@@ -270,6 +263,25 @@ export default function UserManagement() {
                     )}
                 </div>
             </SettingsLayout>
+
+            <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+                <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+                    <DialogHeader>
+                        <DialogTitle>Delete user?</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete &quot;{deleteTarget?.name}&quot;? This cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleDeleteConfirm}>
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }
