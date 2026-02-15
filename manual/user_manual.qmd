@@ -1,40 +1,28 @@
-# Labour Mobility Registry – User Manual
-
-**Version 1.0** | For end users: Admin, VBoS Staff, and Labour Department Staff
-
+---
+title: "Labour Mobility Registry – User Manual"
+subtitle: "For end users: Admin, VBoS Staff, and Labour Department Staff"
+version: 1.0
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    theme: cosmo
 ---
 
-## Table of Contents
-
-1. [Introduction](#1-introduction)
-2. [User Roles Overview](#2-user-roles-overview)
-3. [Getting Started](#3-getting-started)
-4. [Dashboard](#4-dashboard)
-5. [Registry](#5-registry)
-6. [Batches](#6-batches)
-7. [Upload Wizard](#7-upload-wizard)
-8. [Verification (Labour Staff)](#8-verification-labour-staff)
-9. [Reports](#9-reports)
-10. [Settings](#10-settings)
-11. [Returnee Workflow](#11-returnee-workflow)
-12. [Appendix](#12-appendix)
-
----
-
-## 1. Introduction
+## Introduction {#sec-introduction}
 
 The **Labour Mobility Registry** is a web application used by the Vanuatu government to manage labour movement data. It tracks workers departing and returning under schemes such as RSE, SWP, and PALM, and supports verification and compliance workflows.
 
 ### Key concepts
 
 - **Registry**: The master list of individuals (workers) with travel and identity information.
-- **Batch**: A group of registry entries submitted together for verification (e.g. “January 2026 RSE Departures”).
+- **Batch**: A group of registry entries submitted together for verification (e.g. "January 2026 RSE Departures").
 - **Verification**: Labour Department staff review submitted batches before approval.
 - **Returnee**: A worker who has returned; their record may be linked to their original outbound record.
 
----
-
-## 2. User Roles Overview
+## User Roles Overview {#sec-roles}
 
 | Role | Description | Typical Access |
 |------|-------------|----------------|
@@ -46,9 +34,7 @@ The **Labour Mobility Registry** is a web application used by the Vanuatu govern
 | **Viewer** | Read-only access. | Registry (view/export), Reports |
 | **Data Entry** | Limited data entry. | Registry (view/create/edit) |
 
----
-
-## 3. Getting Started
+## Getting Started {#sec-getting-started}
 
 ### Logging in
 
@@ -67,9 +53,7 @@ You are taken to the **Dashboard**, which shows:
 - Returnee compliance metrics (if applicable)
 - Charts and recent activity
 
----
-
-## 4. Dashboard
+## Dashboard {#sec-dashboard}
 
 The Dashboard gives an overview of system activity.
 
@@ -92,9 +76,7 @@ The Dashboard gives an overview of system activity.
   - Match rate (returnees linked to outbound records)
   - Matched vs Unmatched counts
 
----
-
-## 5. Registry
+## Registry {#sec-registry}
 
 The Registry is the main list of all individuals tracked in the system.
 
@@ -131,9 +113,7 @@ The Registry is the main list of all individuals tracked in the system.
 
 - Click **Export to CSV** to download filtered registry data as a CSV file.
 
----
-
-## 6. Batches
+## Batches {#sec-batches}
 
 Batches group registry entries for submission and verification.
 
@@ -155,7 +135,7 @@ Batches group registry entries for submission and verification.
 1. Go to **Batches**.
 2. Click **Create Batch**.
 3. Enter:
-   - **Batch Name** (e.g. “January 2026 RSE Departures”)
+   - **Batch Name** (e.g. "January 2026 RSE Departures")
    - **Scheme** (RSE, SWP, PALM)
    - **Batch Type** (inbound, outbound, earnings, returns)
    - **Period Start** and **Period End**
@@ -205,9 +185,7 @@ For **Returns** batches, the batch detail page shows extra columns:
 - **Flight Number**
 - **Edit** – Link to edit the registry record
 
----
-
-## 7. Upload Wizard
+## Upload Wizard {#sec-upload-wizard}
 
 The Upload Wizard imports CSV data and creates batches.
 
@@ -222,7 +200,9 @@ Go to **Upload Data** (Dashboard or sidebar) or **Registry** → **Upload CSV vi
 
 ### Steps (Standard Import)
 
-**Note:** Airport data is often collected in a single file with both Entry and Exit rows in the Direction column. The system accepts **Entry** (mapped to Inbound) and **Exit** (mapped to Outbound) – you do not need separate files for returnees vs departures.
+::: {.callout-note}
+**Airport data:** Airport data is often collected in a single file with both Entry and Exit rows in the Direction column. The system accepts **Entry** (mapped to Inbound) and **Exit** (mapped to Outbound) – you do not need separate files for returnees vs departures.
+:::
 
 1. **Select CSV File**
    - Choose batch type and batch name.
@@ -256,14 +236,13 @@ Go to **Upload Data** (Dashboard or sidebar) or **Registry** → **Upload CSV vi
 Typical columns: `surname`, `given_name`, `nationality`, `country_of_residence`, `national_id_number`, `document_type`, `document_no`, `dob`, `age`, `sex`, `travel_date`, `direction`, `accommodation_address`, `note`, `travel_reason`, `border_post`, `destination_coming_from`.
 
 **Direction column – airport data:** Data collected at the airport often has a single sheet with both Entry and Exit rows. The `direction` column may contain:
+
 - **Entry** or **Exit** (airport format) – the system maps these to Inbound/Outbound automatically.
 - **Inbound** or **Outbound** – also accepted as-is.
 
 You can upload one file with mixed Entry and Exit rows; each row is stored with the correct direction (Entry→Inbound, Exit→Outbound).
 
----
-
-## 8. Verification (Labour Staff)
+## Verification (Labour Staff) {#sec-verification}
 
 Labour Department staff verify and approve submitted batches.
 
@@ -294,9 +273,7 @@ Labour Department staff verify and approve submitted batches.
 
 - Each batch has an **Audit Trail** showing actions (submitted, verified, approved/rejected), users, timestamps, and changes.
 
----
-
-## 9. Reports
+## Reports {#sec-reports}
 
 The Reports section provides analytics and exports.
 
@@ -323,9 +300,7 @@ Go to **Reports** from the sidebar or Dashboard.
    - List of returnee records
 4. Click **Export CSV** to download the report.
 
----
-
-## 10. Settings
+## Settings {#sec-settings}
 
 ### Profile (all users)
 
@@ -353,9 +328,7 @@ Go to **Reports** from the sidebar or Dashboard.
 - Go to **Settings** → **Cron Jobs**.
 - View and configure scheduled tasks (e.g. verification reminders).
 
----
-
-## 11. Returnee Workflow
+## Returnee Workflow {#sec-returnee}
 
 Returnees are workers who have returned and are tracked separately with linking and reintegration fields.
 
@@ -382,9 +355,7 @@ Returnees are workers who have returned and are tracked separately with linking 
 3. Update **Reintegration Status** and **Self-reported Issues**.
 4. Save.
 
----
-
-## 12. Appendix
+## Appendix {#sec-appendix}
 
 ### Glossary
 

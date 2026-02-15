@@ -19,6 +19,27 @@ class Registry extends Model implements Auditable
         'No Support Needed' => 'No Support Needed',
     ];
 
+    /**
+     * Airport-collected data often uses Entry/Exit in one sheet. Map to Inbound/Outbound.
+     */
+    protected const DIRECTION_ALIASES = [
+        'Entry' => 'Inbound',
+        'Exit' => 'Outbound',
+        'entry' => 'Inbound',
+        'exit' => 'Outbound',
+    ];
+
+    public static function normalizeDirection(?string $value): string
+    {
+        if (empty(trim($value ?? ''))) {
+            return $value ?? '';
+        }
+
+        $trimmed = trim($value);
+
+        return self::DIRECTION_ALIASES[$trimmed] ?? $trimmed;
+    }
+
     protected $table = 'registry';
 
     protected $fillable = [

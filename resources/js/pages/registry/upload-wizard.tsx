@@ -747,7 +747,8 @@ const UploadWizard: React.FC = () => {
                                                                 ? `family_name,given_names,passport_no,dob,nationality,arrival_date,flight_number,port_of_entry,gender,address_vanuatu,destination_coming_from
 Tevili,Herman,PA1234567,15/03/1990,Vanuatu,10/02/2026,NZ123,Bauerfield Airport (VLI),Male,Port Vila,Australia`
                                                                 : `surname,given_name,nationality,country_of_residence,national_id_number,document_type,document_no,dob,age,sex,travel_date,direction,accommodation_address,note,travel_reason,border_post,destination_coming_from
-Besv,Dom,PapuaNewGuinea,Australia,594375,National ID,9CQDZhJF,25/04/1995,30,Male,06/10/2025,Outbound,633 Walter Stravenue Suite 010 Benjaminside KS 17375-4713,N/A,Medical,Luganville,New Zealand`;
+Besv,Dom,PapuaNewGuinea,Australia,594375,National ID,9CQDZhJF,25/04/1995,30,Male,06/10/2025,Exit,633 Walter Stravenue Suite 010 Benjaminside KS 17375-4713,N/A,Medical,Luganville,New Zealand
+Tevili,Herman,Vanuatu,Vanuatu,,Passport,PA1234567,15/03/1990,35,Male,10/02/2026,Entry,Port Vila,N/A,Return,Bauerfield Airport (VLI),Australia`;
                                                             const blob = new Blob([csvContent], { type: 'text/csv' });
                                                             const url = window.URL.createObjectURL(blob);
                                                             const a = document.createElement('a');
