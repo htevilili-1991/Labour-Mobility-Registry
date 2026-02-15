@@ -29,7 +29,7 @@ class ProfileController extends Controller
      */
     public function showProfile(Request $request): Response
     {
-        return Inertia::render('Settings/profile', [
+        return Inertia::render('settings/profile', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
         ]);
@@ -80,7 +80,7 @@ class ProfileController extends Controller
      */
     public function showPassword(): Response
     {
-        return Inertia::render('Settings/Password');
+        return Inertia::render('settings/password');
     }
 
     /**
@@ -93,7 +93,7 @@ class ProfileController extends Controller
             'password' => ['required', 'string', Password::defaults(), 'confirmed'],
         ]);
 
-        if (!Hash::check($request->current_password, auth()->user()->password)) {
+        if (! Hash::check($request->current_password, auth()->user()->password)) {
             return redirect()->back()->withErrors(['current_password' => 'Current password is incorrect.']);
         }
 
@@ -178,6 +178,6 @@ class ProfileController extends Controller
      */
     public function showRolesPermissions(): Response
     {
-        return Inertia::render('Settings/RolesPermissions');
+        return Inertia::render('settings/RolesPermissions');
     }
 }

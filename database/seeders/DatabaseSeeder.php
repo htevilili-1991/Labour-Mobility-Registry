@@ -35,5 +35,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RegistrySeeder::class,
         ]);
+
+        // Schedule config for cron jobs
+        $this->call([
+            ScheduleConfigSeeder::class,
+        ]);
     }
 }

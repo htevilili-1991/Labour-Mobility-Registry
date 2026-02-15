@@ -3,6 +3,8 @@ import type { Config } from 'ziggy-js';
 
 export interface Auth {
     user: User;
+    is_admin?: boolean;
+    unread_notifications_count?: number;
 }
 
 export interface BreadcrumbItem {
