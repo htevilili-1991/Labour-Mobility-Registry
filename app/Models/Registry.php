@@ -9,22 +9,25 @@ use OwenIt\Auditing\Contracts\Auditable;
 
 class Registry extends Model implements Auditable
 {
-    use \OwenIt\Auditing\Auditable;
     use HasFactory;
+    use \OwenIt\Auditing\Auditable;
 
     protected $table = 'registry';
 
     protected $fillable = [
-        'surname', 'given_name', 'nationality', 'country_of_residence','national_id_number',
+        'surname', 'given_name', 'nationality', 'country_of_residence', 'national_id_number',
         'document_type', 'document_no', 'dob', 'age', 'sex', 'travel_date',
         'direction', 'accommodation_address', 'note', 'travel_reason',
         'border_post', 'destination_coming_from', 'registry_batch_id',
+        'return_date', 'flight_number', 'linked_outbound_id',
+        'reintegration_status', 'self_reported_issues', 'match_confidence', 'match_status',
         'is_locked', 'locked_at', 'locked_by',
     ];
 
     protected $casts = [
         'travel_date' => 'date',
         'dob' => 'date',
+        'return_date' => 'date',
         'is_locked' => 'boolean',
         'locked_at' => 'datetime',
     ];
@@ -34,6 +37,16 @@ class Registry extends Model implements Auditable
         return $this->belongsTo(RegistryBatch::class);
     }
 
+    public function linkedOutbound(): BelongsTo
+    {
+        return $this->belongsTo(Registry::class, 'linked_outbound_id');
+    }
+
+    public function returnRecords(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Registry::class, 'linked_outbound_id');
+    }
+
     public function lockedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'locked_by');
@@ -41,11 +54,11 @@ class Registry extends Model implements Auditable
 
     public function canBeEdited(): bool
     {
-        return !$this->is_locked;
+        return ! $this->is_locked;
     }
 
     public function canBeDeleted(): bool
     {
-        return !$this->is_locked;
+        return ! $this->is_locked;
     }
 }

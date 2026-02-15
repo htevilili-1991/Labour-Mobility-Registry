@@ -1,4 +1,4 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage, router } from '@inertiajs/react';
 import { PageProps, User, BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertCircle, Upload, Users, XCircle, Pencil, Download, Wand2 } from 'lucide-react';
+import { CheckCircle, AlertCircle, Upload, Users, XCircle, Pencil, Download, Wand2, FileDown, Link2 } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -19,6 +19,21 @@ import {
 } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
+interface ReturneeMatch {
+    matched: { id: number; surname: string; given_name: string; travel_date: string } | null;
+    confidence: number;
+    status: string;
+}
+
+interface ReturneePreview {
+    rows: Record<string, unknown>[];
+    matches: Record<number, ReturneeMatch>;
+    totalRows: number;
+    matchedCount: number;
+    unmatchedCount: number;
+    pendingReviewCount: number;
+}
+
 interface Props extends PageProps {
     auth: {
         user: User | null;
@@ -28,6 +43,7 @@ interface Props extends PageProps {
         entries?: string;
     };
     success?: string;
+    returneePreview?: ReturneePreview;
 }
 
 interface UploadStep {
@@ -54,7 +70,7 @@ interface CsvPreview {
 const STORAGE_KEY = 'upload-wizard-progress';
 
 const UploadWizard: React.FC = () => {
-    const { errors, success, auth } = usePage<Props>().props;
+    const { errors, success, auth, returneePreview: initialReturneePreview } = usePage<Props>().props;
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dropZoneRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -89,7 +105,11 @@ const UploadWizard: React.FC = () => {
     const { post, setData, processing, data } = form;
 
     const [currentStep, setCurrentStep] = useState(1);
+    const [importMode, setImportMode] = useState<'standard' | 'returnee'>('standard');
     const [csvPreview, setCsvPreview] = useState<CsvPreview | null>(null);
+    const [returneePreview, setReturneePreview] = useState<ReturneePreview | null>(initialReturneePreview ?? null);
+    const [returneePreviewLoading, setReturneePreviewLoading] = useState(false);
+    const [returneePreviewError, setReturneePreviewError] = useState<string | null>(null);
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
     const [showCsvEditor, setShowCsvEditor] = useState(false);
     const [editableRows, setEditableRows] = useState<string[][]>([]);
@@ -367,6 +387,11 @@ const UploadWizard: React.FC = () => {
 
     const processCsvFile = useCallback((file: File) => {
         setData('csv_file', file);
+        if (importMode === 'returnee') {
+            setReturneePreview(null);
+            setReturneePreviewError(null);
+            return;
+        }
 
         const reader = new FileReader();
         reader.onload = async (e) => {
@@ -400,7 +425,7 @@ const UploadWizard: React.FC = () => {
             setCsvPreview(result);
         };
         reader.readAsText(file);
-    }, [setData, runValidation]);
+    }, [setData, runValidation, importMode]);
 
     const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -439,17 +464,68 @@ const UploadWizard: React.FC = () => {
         }
     }, [processCsvFile]);
 
+    const handleReturneePreview = useCallback(async () => {
+        if (!data.csv_file) return;
+        setReturneePreviewLoading(true);
+        setReturneePreviewError(null);
+        const formData = new FormData();
+        formData.append('csv_file', data.csv_file);
+        try {
+            const res = await fetch(route('registry.previewReturneeWizard'), {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '',
+                },
+            });
+            const json = await res.json().catch(() => ({}));
+            if (res.ok) {
+                setReturneePreview(json);
+                setCurrentStep(2);
+            } else {
+                const msg = json?.message ?? json?.errors?.csv_file?.[0] ?? 'Failed to preview';
+                setReturneePreviewError(msg);
+            }
+        } catch (e) {
+            setReturneePreviewError(e instanceof Error ? e.message : 'Network error');
+        } finally {
+            setReturneePreviewLoading(false);
+        }
+    }, [data.csv_file]);
+
     const handleStepComplete = useCallback(() => {
+        if (importMode === 'returnee' && currentStep === 1 && data.csv_file) {
+            handleReturneePreview();
+            return;
+        }
         const nextStep = Math.min(currentStep + 1, steps.length);
         setCurrentStep(nextStep);
-    }, [currentStep]);
+    }, [currentStep, importMode, data.csv_file, handleReturneePreview]);
 
     const handleSubmit = useCallback((e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (currentStep < steps.length) {
-            // Save progress and move to next step
             handleStepComplete();
+            return;
+        }
+
+        if (importMode === 'returnee') {
+            const fd = new FormData();
+            fd.append('csv_file', data.csv_file!);
+            fd.append('batch_name', data.batch_name);
+            fd.append('_token', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '');
+            router.post(route('registry.storeReturneeWizard'), fd, {
+                onSuccess: () => {
+                    setData('csv_file', null);
+                    setData('batch_name', '');
+                    setReturneePreview(null);
+                    setCurrentStep(1);
+                    clearSavedProgress();
+                },
+            });
             return;
         }
 
@@ -464,32 +540,37 @@ const UploadWizard: React.FC = () => {
                 clearSavedProgress();
             },
         });
-    }, [currentStep]);
+    }, [currentStep, importMode, data.csv_file, data.batch_name]);
 
     // Derive completed state for each step (1-based index)
     const isStepCompleted = useCallback((stepIndex: number) => {
         const oneBased = stepIndex + 1;
-        // Step 1: completed when CSV file has been selected
+        if (importMode === 'returnee') {
+            if (oneBased === 1) return !!(data.csv_file && (returneePreview || currentStep > 1));
+            if (oneBased === 2) return currentStep > 2;
+            return false;
+        }
         if (oneBased === 1) return !!csvPreview;
-        // Step 2: completed when we've moved past it
         if (oneBased === 2) return currentStep > 2;
-        // Step 3: in progress when on it, not "completed" until form submits
         return false;
-    }, [csvPreview, currentStep]);
+    }, [csvPreview, currentStep, importMode, data.csv_file, returneePreview]);
 
     // Step has validation errors (show red, hide Next button)
     const isStepHasError = useCallback((stepIndex: number) => {
         const oneBased = stepIndex + 1;
         const isCurrentStep = currentStep === oneBased;
         if (!isCurrentStep) return false;
-        // Step 1: error when no file selected
+        if (importMode === 'returnee') {
+            if (oneBased === 1) return !data.csv_file;
+            if (oneBased === 2) return !returneePreview || returneePreview.totalRows === 0;
+            if (oneBased === 3) return !data.batch_name?.trim();
+            return false;
+        }
         if (oneBased === 1) return !csvPreview;
-        // Step 2: error when no valid rows
         if (oneBased === 2) return !csvPreview || csvPreview.validRows === 0;
-        // Step 3: error when batch name or type missing
         if (oneBased === 3) return !data.batch_name?.trim() || !data.batch_type;
         return false;
-    }, [currentStep, csvPreview, data.batch_name, data.batch_type]);
+    }, [currentStep, csvPreview, data.batch_name, data.batch_type, importMode, data.csv_file, returneePreview]);
 
     const getStepIcon = (step: UploadStep, stepIndex: number) => {
         const Icon = step.icon;
@@ -536,6 +617,37 @@ const UploadWizard: React.FC = () => {
                             <div className="flex items-center gap-2">
                                 <Badge variant="outline">Step {currentStep} of {steps.length}</Badge>
                             </div>
+                        </div>
+
+                        {/* Import Mode Selector */}
+                        <div className="mb-6 flex gap-4">
+                            <Button
+                                type="button"
+                                variant={importMode === 'standard' ? 'default' : 'outline'}
+                                onClick={() => {
+                                    setImportMode('standard');
+                                    setCsvPreview(null);
+                                    setReturneePreview(null);
+                                    setData('csv_file', null);
+                                    setCurrentStep(1);
+                                }}
+                            >
+                                Standard Import
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={importMode === 'returnee' ? 'default' : 'outline'}
+                                onClick={() => {
+                                    setImportMode('returnee');
+                                    setCsvPreview(null);
+                                    setReturneePreview(null);
+                                    setData('csv_file', null);
+                                    setCurrentStep(1);
+                                }}
+                            >
+                                <Link2 className="w-4 h-4 mr-2" />
+                                Returnee from Arrival Cards
+                            </Button>
                         </div>
 
                         {success && (
@@ -618,20 +730,29 @@ const UploadWizard: React.FC = () => {
                                             <div className="rounded-lg border-2 border-blue-300 bg-blue-100 p-4">
                                                 <div className="flex items-center justify-between">
                                                     <div>
-                                                        <h4 className="mb-1 text-lg font-bold text-blue-900">📋 Need a CSV Template?</h4>
-                                                        <p className="text-sm text-blue-800">Download our template to ensure your data is formatted correctly before uploading.</p>
+                                                        <h4 className="mb-1 text-lg font-bold text-blue-900">
+                                                            {importMode === 'returnee' ? '📋 Returnee Arrival Card Template' : '📋 Need a CSV Template?'}
+                                                        </h4>
+                                                        <p className="text-sm text-blue-800">
+                                                            {importMode === 'returnee'
+                                                                ? 'Use arrival card format: family_name, given_names, passport_no, dob, arrival_date, flight_number, port_of_entry, gender, etc.'
+                                                                : 'Download our template to ensure your data is formatted correctly before uploading.'}
+                                                        </p>
                                                     </div>
                                                     <Button
                                                         variant="default"
                                                         size="sm"
                                                         onClick={() => {
-                                                            const csvContent = `surname,given_name,nationality,country_of_residence,national_id_number,document_type,document_no,dob,age,sex,travel_date,direction,accommodation_address,note,travel_reason,border_post,destination_coming_from
+                                                            const csvContent = importMode === 'returnee'
+                                                                ? `family_name,given_names,passport_no,dob,nationality,arrival_date,flight_number,port_of_entry,gender,address_vanuatu,destination_coming_from
+Tevili,Herman,PA1234567,15/03/1990,Vanuatu,10/02/2026,NZ123,Bauerfield Airport (VLI),Male,Port Vila,Australia`
+                                                                : `surname,given_name,nationality,country_of_residence,national_id_number,document_type,document_no,dob,age,sex,travel_date,direction,accommodation_address,note,travel_reason,border_post,destination_coming_from
 Besv,Dom,PapuaNewGuinea,Australia,594375,National ID,9CQDZhJF,25/04/1995,30,Male,06/10/2025,Outbound,633 Walter Stravenue Suite 010 Benjaminside KS 17375-4713,N/A,Medical,Luganville,New Zealand`;
                                                             const blob = new Blob([csvContent], { type: 'text/csv' });
                                                             const url = window.URL.createObjectURL(blob);
                                                             const a = document.createElement('a');
                                                             a.href = url;
-                                                            a.download = 'registry-template.csv';
+                                                            a.download = importMode === 'returnee' ? 'returnee-arrival-template.csv' : 'registry-template.csv';
                                                             document.body.appendChild(a);
                                                             a.click();
                                                             document.body.removeChild(a);
@@ -680,47 +801,71 @@ Besv,Dom,PapuaNewGuinea,Australia,594375,National ID,9CQDZhJF,25/04/1995,30,Male
                                                 </Button>
                                             </div>
                                             
-                                            {csvPreview && (
+                                            {(csvPreview || (importMode === 'returnee' && data.csv_file)) && (
                                                 <div className="mt-4 rounded-lg bg-gray-50 p-4">
+                                                    {importMode === 'returnee' ? (
+                                                        <>
+                                                            <h4 className="mb-2 font-semibold text-gray-900">File Selected</h4>
+                                                            <p className="text-sm text-gray-600 mb-4">
+                                                                {data.csv_file?.name} – Click &quot;Preview &amp; Match&quot; to validate and match against outbound records.
+                                                            </p>
+                                                            {returneePreviewError && (
+                                                                <Alert variant="destructive" className="mb-4">
+                                                                    <AlertDescription>{returneePreviewError}</AlertDescription>
+                                                                </Alert>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <>
                                                     <h4 className="mb-2 font-semibold text-gray-900">CSV Preview</h4>
                                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                                         <div>
                                                             <span className="font-medium">Total Rows:</span>
-                                                            <span className="text-blue-600">{csvPreview.totalRows}</span>
+                                                            <span className="text-blue-600">{csvPreview!.totalRows}</span>
                                                         </div>
                                                         <div>
                                                             <span className="font-medium">Valid Rows:</span>
-                                                            <span className="text-green-600">{csvPreview.validRows}</span>
+                                                            <span className="text-green-600">{csvPreview!.validRows}</span>
                                                         </div>
                                                         <div>
                                                             <span className="font-medium">Duplicates:</span>
-                                                            <span className={csvPreview.duplicates > 0 ? 'text-red-600' : 'text-green-600'}>
-                                                                {csvPreview.duplicates}
+                                                            <span className={csvPreview!.duplicates > 0 ? 'text-red-600' : 'text-green-600'}>
+                                                                {csvPreview!.duplicates}
                                                             </span>
                                                         </div>
                                                     </div>
                                                     
-                                                    {csvPreview.duplicates > 0 && (
+                                                    {csvPreview!.duplicates > 0 && (
                                                         <Alert className="mt-4">
                                                             <AlertCircle className="h-4 w-4" />
                                                             <AlertDescription>
-                                                                <strong>Duplicate Detection:</strong> Found {csvPreview.duplicates} duplicate entries by document number. These will be automatically skipped during import.
+                                                                <strong>Duplicate Detection:</strong> Found {csvPreview!.duplicates} duplicate entries by document number. These will be automatically skipped during import.
                                                             </AlertDescription>
                                                         </Alert>
                                                     )}
-                                                    
+
                                                     <div className="mt-4">
                                                         <h5 className="font-medium mb-2">Headers Found:</h5>
                                                         <div className="flex flex-wrap gap-2">
-                                                            {csvPreview.headers.map((header, index) => (
+                                                            {csvPreview!.headers.map((header, index) => (
                                                                 <Badge key={index} variant="outline" className="text-xs">
                                                                     {header || `Column ${index + 1}`}
                                                                 </Badge>
                                                             ))}
                                                         </div>
                                                     </div>
+                                                        </>
+                                                    )}
                                                     <div className="mt-6">
-                                                        {isCurrentStepValid ? (
+                                                        {importMode === 'returnee' ? (
+                                                            <Button
+                                                                onClick={handleStepComplete}
+                                                                disabled={!data.csv_file || returneePreviewLoading}
+                                                                className="w-full bg-green-600 hover:bg-green-700"
+                                                            >
+                                                                {returneePreviewLoading ? 'Matching...' : 'Preview & Match'}
+                                                            </Button>
+                                                        ) : isCurrentStepValid ? (
                                                             <Button
                                                                 onClick={handleStepComplete}
                                                                 className="w-full bg-green-600 hover:bg-green-700"
@@ -745,12 +890,69 @@ Besv,Dom,PapuaNewGuinea,Australia,594375,National ID,9CQDZhJF,25/04/1995,30,Male
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2">
                                             <CheckCircle className="w-5 h-5" />
-                                            Validate Data
+                                            {importMode === 'returnee' ? 'Match Preview' : 'Validate Data'}
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="space-y-4">
-                                            {csvPreview && (
+                                            {importMode === 'returnee' && returneePreview ? (
+                                                <>
+                                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                                        <div className="p-4 bg-green-50 rounded-lg">
+                                                            <h4 className="font-semibold text-green-800">Matched</h4>
+                                                            <p className="text-2xl font-bold text-green-600">{returneePreview.matchedCount}</p>
+                                                        </div>
+                                                        <div className="p-4 bg-amber-50 rounded-lg">
+                                                            <h4 className="font-semibold text-amber-800">Pending Review</h4>
+                                                            <p className="text-2xl font-bold text-amber-600">{returneePreview.pendingReviewCount}</p>
+                                                        </div>
+                                                        <div className="p-4 bg-red-50 rounded-lg">
+                                                            <h4 className="font-semibold text-red-800">Unmatched</h4>
+                                                            <p className="text-2xl font-bold text-red-600">{returneePreview.unmatchedCount}</p>
+                                                        </div>
+                                                        <div className="p-4 bg-gray-50 rounded-lg">
+                                                            <h4 className="font-semibold text-gray-800">Total</h4>
+                                                            <p className="text-2xl font-bold text-gray-600">{returneePreview.totalRows}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-4 max-h-96 overflow-auto border rounded-lg">
+                                                        <Table>
+                                                            <TableHeader>
+                                                                <TableRow>
+                                                                    <TableHead>Name</TableHead>
+                                                                    <TableHead>Document</TableHead>
+                                                                    <TableHead>Arrival Date</TableHead>
+                                                                    <TableHead>Status</TableHead>
+                                                                    <TableHead>Matched Outbound</TableHead>
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {returneePreview.rows.map((row, i) => {
+                                                                    const m = returneePreview.matches[i] ?? { status: 'unmatched', confidence: 0, matched: null };
+                                                                    return (
+                                                                        <TableRow key={i}>
+                                                                            <TableCell>{row.surname} {row.given_name}</TableCell>
+                                                                            <TableCell>{row.document_no}</TableCell>
+                                                                            <TableCell>{String(row.travel_date || '')}</TableCell>
+                                                                            <TableCell>
+                                                                                <Badge variant={m.status === 'matched' ? 'default' : m.status === 'pending_review' ? 'secondary' : 'destructive'}>
+                                                                                    {m.status.replace('_', ' ')} {m.confidence ? `(${m.confidence}%)` : ''}
+                                                                                </Badge>
+                                                                            </TableCell>
+                                                                            <TableCell>{m.matched ? `${m.matched.surname} ${m.matched.given_name} (${m.matched.travel_date})` : '—'}</TableCell>
+                                                                        </TableRow>
+                                                                    );
+                                                                })}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </div>
+                                                    <div className="mt-6">
+                                                        <Button onClick={() => setCurrentStep(3)} className="w-full bg-green-600 hover:bg-green-700">
+                                                            Continue to Create Batch
+                                                        </Button>
+                                                    </div>
+                                                </>
+                                            ) : csvPreview && (
                                                 <>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         <div className="p-4 bg-green-50 rounded-lg">
@@ -860,10 +1062,11 @@ Besv,Dom,PapuaNewGuinea,Australia,594375,National ID,9CQDZhJF,25/04/1995,30,Male
                                                     onChange={(e) => setData('batch_name', e.target.value)}
                                                 />
                                                 <p className="text-xs text-gray-500 mt-1">
-                                                    Suggested: {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })} {data.batch_type ? data.batch_type.charAt(0).toUpperCase() + data.batch_type.slice(1) : ''} Batch
+                                                    Suggested: {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })} {importMode === 'returnee' ? 'Returns' : (data.batch_type ? data.batch_type.charAt(0).toUpperCase() + data.batch_type.slice(1) : '')} Batch
                                                 </p>
                                             </div>
                                             
+                                            {importMode !== 'returnee' && (
                                             <div>
                                                 <Label htmlFor="batch_type">Batch Type</Label>
                                                 <select
@@ -879,19 +1082,20 @@ Besv,Dom,PapuaNewGuinea,Australia,594375,National ID,9CQDZhJF,25/04/1995,30,Male
                                                     <option value="returns">Returns</option>
                                                 </select>
                                             </div>
+                                            )}
 
                                             <div className="mt-6">
                                                 {isCurrentStepValid ? (
-                                                    <Button 
+                                                    <Button
                                                         type="submit"
-                                                        disabled={processing || !csvPreview}
+                                                        disabled={processing || (importMode === 'standard' && !csvPreview) || (importMode === 'returnee' && !returneePreview)}
                                                         className="w-full bg-green-600 hover:bg-green-700"
                                                     >
                                                         {processing ? 'Creating Batch...' : 'Create Batch & Import Data'}
                                                     </Button>
                                                 ) : (
                                                     <p className="text-center text-sm text-red-600 py-2">
-                                                        Enter batch name and type to continue.
+                                                        {importMode === 'returnee' ? 'Enter batch name to continue.' : 'Enter batch name and type to continue.'}
                                                     </p>
                                                 )}
                                             </div>

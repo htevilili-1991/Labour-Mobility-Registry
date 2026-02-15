@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Registry;
+use App\Models\RegistryMatchLog;
+use App\Notifications\ReturneeReturned;
+use App\Services\ReturneeCsvParser;
+use App\Services\ReturneeMatchService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
@@ -674,5 +678,136 @@ class RegistryController extends Controller
 
             return Redirect::back()->withErrors(['csv_file' => 'Error processing CSV: '.$e->getMessage()]);
         }
+    }
+
+    /**
+     * Preview returnee CSV with match results (for Returnee Import wizard).
+     */
+    public function previewReturneeWizard(Request $request)
+    {
+        $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt|max:10240',
+        ]);
+
+        $content = file_get_contents($request->file('csv_file')->getRealPath());
+        $parser = new ReturneeCsvParser;
+        $rows = $parser->parse($content);
+
+        if (empty($rows)) {
+            return Redirect::back()->withErrors(['csv_file' => 'No valid rows found in CSV. Check headers.']);
+        }
+
+        $matchService = new ReturneeMatchService;
+        $matches = [];
+
+        foreach ($rows as $i => $row) {
+            $result = $matchService->findOutboundMatch($row);
+            $matches[$i] = [
+                'matched' => $result['matched'] ? [
+                    'id' => $result['matched']->id,
+                    'surname' => $result['matched']->surname,
+                    'given_name' => $result['matched']->given_name,
+                    'travel_date' => $result['matched']->travel_date?->format('Y-m-d'),
+                ] : null,
+                'confidence' => $result['confidence'],
+                'status' => $result['status'],
+            ];
+        }
+
+        $preview = [
+            'rows' => $rows,
+            'matches' => $matches,
+            'totalRows' => count($rows),
+            'matchedCount' => collect($matches)->where('status', 'matched')->count(),
+            'unmatchedCount' => collect($matches)->where('status', 'unmatched')->count(),
+            'pendingReviewCount' => collect($matches)->where('status', 'pending_review')->count(),
+        ];
+
+        if ($request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return response()->json($preview);
+        }
+
+        return Inertia::render('registry/upload-wizard', [
+            'returneePreview' => $preview,
+        ]);
+    }
+
+    /**
+     * Store returnee import - creates batch and registry entries with matching.
+     */
+    public function storeReturneeWizard(Request $request)
+    {
+        $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt|max:10240',
+            'batch_name' => 'required|string|max:255',
+        ]);
+
+        $content = file_get_contents($request->file('csv_file')->getRealPath());
+        $parser = new ReturneeCsvParser;
+        $rows = $parser->parse($content);
+
+        if (empty($rows)) {
+            return Redirect::back()->withErrors(['csv_file' => 'No valid rows found in CSV.']);
+        }
+
+        $batch = \App\Models\RegistryBatch::create([
+            'name' => $request->batch_name,
+            'batch_type' => 'returns',
+            'scheme' => 'RSE',
+            'period_start' => now()->startOfMonth(),
+            'period_end' => now()->endOfMonth(),
+            'status' => 'draft',
+        ]);
+
+        $matchService = new ReturneeMatchService;
+        $recordsCreated = 0;
+        $user = auth()->user();
+
+        foreach ($rows as $row) {
+            $result = $matchService->findOutboundMatch($row);
+            $linkedId = $result['matched']?->id;
+            $confidence = $result['confidence'];
+            $status = $result['status'];
+
+            try {
+                $registry = Registry::create(array_merge($row, [
+                    'registry_batch_id' => $batch->id,
+                    'linked_outbound_id' => $linkedId,
+                    'match_confidence' => $confidence,
+                    'match_status' => $status,
+                    'national_id_number' => $row['national_id_number'] ?? null,
+                ]));
+
+                RegistryMatchLog::create([
+                    'return_registry_id' => $registry->id,
+                    'matched_outbound_id' => $linkedId,
+                    'confidence' => $confidence,
+                    'status' => $status,
+                    'user_id' => $user?->id,
+                ]);
+
+                $recordsCreated++;
+
+                if ($linkedId && $status === 'matched') {
+                    $verificationUsers = \App\Models\User::withPermission('batches.verify')->get();
+                    foreach ($verificationUsers as $vUser) {
+                        $vUser->notify(new ReturneeReturned($registry));
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to create returnee Registry record: '.$e->getMessage());
+            }
+        }
+
+        $batch->record_count = $recordsCreated;
+        $batch->save();
+
+        Log::info('Returnee wizard import completed', [
+            'batch_id' => $batch->id,
+            'records_created' => $recordsCreated,
+        ]);
+
+        return Redirect::route('batches.show', $batch)
+            ->with('success', "Return batch created and $recordsCreated returnee records imported.");
     }
 }

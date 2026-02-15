@@ -28,6 +28,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('upload-wizard', [RegistryController::class, 'uploadWizard'])->name('registry.upload-wizard');
         Route::post('upload', [RegistryController::class, 'storeCsv'])->name('registry.storeCsv');
         Route::post('store-wizard', [RegistryController::class, 'storeWizard'])->name('registry.storeWizard');
+        Route::post('preview-returnee-wizard', [RegistryController::class, 'previewReturneeWizard'])->name('registry.previewReturneeWizard');
+        Route::post('store-returnee-wizard', [RegistryController::class, 'storeReturneeWizard'])->name('registry.storeReturneeWizard');
         Route::post('bulk-delete', [RegistryController::class, 'bulkDestroy'])->name('registry.bulk-destroy');
 
         // Resource routes with constraints
