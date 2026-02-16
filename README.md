@@ -10,6 +10,7 @@ The **Vanuatu Labour Registry** is a sophisticated, full-stack web application e
 - [Usage](#usage)
 - [Project Architecture](#project-architecture)
 - [Database Schema](#database-schema)
+- [Screenshots](#screenshots)
 - [Contributing](#contributing)
 - [License](#license)
 - [Contact](#contact)
@@ -45,38 +46,49 @@ The **Vanuatu Labour Registry** is a sophisticated, full-stack web application e
 - **Progress Indicators**: Visual feedback for all async operations including uploads, validations, and batch processing.
 - **Keyboard Navigation**: Full keyboard accessibility support for power users and accessibility compliance.
 
+### Returnee Workflow
+- **Returnee Tracking**: Track workers who have returned from overseas with return date, flight number, reintegration status, and self-reported issues.
+- **Outbound–Inbound Linking**: Link returnee records to original outbound records for match tracking.
+- **Returnee Compliance Report**: Summary report with period filter and CSV export for returnee compliance monitoring.
+- **Dashboard Returnee Widgets**: 30/90-day return metrics, match rate, and matched vs unmatched counts.
+
 ### Administrative & Verification Features
 - **Role-Based Access Control**: Granular permission system with role management for different user types (VBoS, Labour Department, Admin).
 - **Verification Workflow**: Dedicated verification interface for Labour Department staff with audit trails and approval/rejection capabilities.
 - **Audit System**: Comprehensive audit logging for all registry changes with user tracking and timestamps.
-- **Reports Dashboard**: Advanced analytics and reporting module with verification, compliance, and performance reports.
+- **Reports Dashboard**: Advanced analytics and reporting module with verification, compliance, performance, and returnee compliance reports.
 - **Real-Time Analytics**: Live data visualization and statistics for monitoring registry operations and trends.
 
+### User Manual
+- **In-App Access**: User Manual link in the sidebar navigation (opens in new tab).
+- **Hosted Documentation**: Full user guide hosted at [GitHub Pages](https://htevilili-1991.github.io/lmr-user_manual/), covering roles, dashboard, registry, batches, upload wizard, verification, reports, settings, and returnee workflow.
+
 ## **Technology Stack**
-- **Backend Framework**: **Laravel** 11, a PHP framework with Eloquent ORM for seamless database interactions and RESTful API routing.
-- **Frontend Library**: **React JS** 18, utilizing functional components and hooks for reactive UI development.
-- **Server-Side Rendering Bridge**: **Inertia.js**, enabling SPA-like experiences with server-driven rendering, eliminating traditional API overhead.
+- **Backend Framework**: **Laravel** 12, a PHP framework with Eloquent ORM for seamless database interactions and RESTful API routing.
+- **Frontend Library**: **React** 19, utilizing functional components and hooks for reactive UI development.
+- **Server-Side Rendering Bridge**: **Inertia.js** v2, enabling SPA-like experiences with server-driven rendering, eliminating traditional API overhead.
 - **Type Safety**: **TypeScript**, enforcing static typing for maintainable and scalable frontend code.
-- **Styling**: **Tailwind CSS**, a utility-first CSS framework for rapid, responsive design.
-- **Data Table Engine**: **`@tanstack/react-table` v8**, providing advanced table functionalities like sorting and filtering.
-- **Build Orchestration**: **Vite** 6.2.0, a next-generation bundler for lightning-fast development and production builds.
-- **Database**: **MySQL**, managed via **Laravel** migrations for schema consistency.
-- **Environment**: **XAMPP**, hosting **Apache** and **MySQL** for local development on Windows.
+- **Styling**: **Tailwind CSS** v4, a utility-first CSS framework for rapid, responsive design.
+- **Data Table Engine**: **`@tanstack/react-table`** v8, providing advanced table functionalities like sorting and filtering.
+- **Build Orchestration**: **Vite** 6, a next-generation bundler for lightning-fast development and production builds.
+- **Database**: **MySQL** / **SQLite**, managed via **Laravel** migrations for schema consistency.
+- **Development**: **Laravel Sail** for containerized development, or **XAMPP** (Apache + MySQL) on Windows.
 
 ## **Prerequisites**
 - **PHP**: 8.2 or higher
 - **Composer**: Latest version for dependency management
 - **Node.js**: 18.x or higher
 - **npm**: 8.x or higher
-- **MySQL**: 8.0 or higher
-- **XAMPP**: Configured with **Apache** and **MySQL**
+- **MySQL** 8.0+ or **SQLite** (for local development)
 - **Git**: For repository cloning
+
+> **Tip**: Use `composer run dev` to start Laravel, the queue, and Vite in one command. For containerized setup, use Laravel Sail.
 
 ## **Installation**
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/your-username/vanuatu-labour-registry.git
-   cd vanuatu-labour-registry
+   git clone https://github.com/htevilili-1991/Labour-Mobility-Registry.git
+   cd Labour-Mobility-Registry
    ```
 
 2. **Install PHP Dependencies**
@@ -181,7 +193,7 @@ The **Vanuatu Labour Registry** is a sophisticated, full-stack web application e
 
 ### Registry Data Management
 1. **Query Registry Data**
-   - Access `/registry` via the **AppSidebar.tsx** navigation ("View Data").
+   - Access `/registry` via the sidebar navigation (**Registry**).
    - Utilize the instant search input, powered by **`@tanstack/react-table`**, to filter records (e.g., `Doe`, `2025-05`).
    - Sort columns by clicking headers (e.g., `Surname`) for dynamic data ordering.
    - Click rows to navigate to `/registry/{id}` for detailed views.
@@ -216,10 +228,16 @@ The **Vanuatu Labour Registry** is a sophisticated, full-stack web application e
    - View batch audit history at `/verification/{batch}/audit`.
 
 6. **Administrative Functions**
-   - Manage user roles and permissions via `/admin/roles` and `/admin/permissions`.
-   - Generate reports at `/reports` including verification, compliance, and performance analytics.
+   - Manage users and profile via `/settings/profile` and user management (Admin).
+   - Generate reports at `/reports` including verification, compliance, performance, and **Returnee Compliance**.
    - View audit logs at `/audits` for complete system activity tracking.
    - Monitor real-time analytics and statistics on the main dashboard.
+
+6a. **Returnee Workflow**
+   - Dashboard shows returnee widgets (30/90-day returns, match rate).
+   - Edit inbound registry records to add returnee fields: return date, flight number, reintegration status, self-reported issues.
+   - Link returnees to outbound records when matched.
+   - Run the Returnee Compliance report at `/reports/returnee-compliance` with period filter and CSV export.
 
 ### User Interface Features
 7. **Theme & Appearance**
@@ -227,12 +245,15 @@ The **Vanuatu Labour Registry** is a sophisticated, full-stack web application e
    - Theme preference is automatically saved and restored across sessions.
    - All interfaces are fully responsive and mobile-optimized.
 
-8. **Bulk Operations**
+8. **User Manual**
+   - Open the **User Manual** from the sidebar (below Settings) to view the full documentation. It opens in a new tab at [htevilili-1991.github.io/lmr-user_manual](https://htevilili-1991.github.io/lmr-user_manual/).
+
+9. **Bulk Operations**
    - Select multiple registry entries using checkboxes in the main registry table.
    - Use "Select All" to select all visible entries.
    - Perform bulk actions like adding entries to batches or exporting selected data.
 
-9. **Diagnostics**
+10. **Diagnostics**
    - **UI Issues**: If the app becomes unresponsive post-update, inspect the browser console (F12) and `storage/logs/laravel.log` for **Laravel** or **React JS** errors.
    - **Database Errors**: Validate **MySQL** migrations and `.env` configuration.
    - **Build Failures**: Clear caches and rebuild:
@@ -247,7 +268,7 @@ The **Vanuatu Labour Registry** is a sophisticated, full-stack web application e
 
 ## **Project Architecture**
 ```
-vanuatu-labour-registry/
+Labour-Mobility-Registry/
 ├── app/
 │   ├── Http/
 │   │   ├── Controllers/
@@ -300,6 +321,10 @@ vanuatu-labour-registry/
 │   └── settings.php
 ├── database/
 │   └── migrations/
+├── docs/
+│   ├── USER_MANUAL.md          # User manual source
+│   └── screenshots/             # Screenshots for README
+├── manual/                     # Quarto source for hosted user manual
 ├── .env.example
 ├── composer.json
 ├── package.json
@@ -355,6 +380,8 @@ CREATE TABLE registry (
 );
 ```
 
+**Returnee fields** (for inbound/return records): `return_date`, `flight_number`, `linked_outbound_id`, `reintegration_status`, `self_reported_issues`, `match_status`.
+
 **Note**: Actual registry data is not included in this repository to ensure privacy and compliance with data protection standards. To populate the database with dummy data for development and testing, execute the **Laravel Tinker** commands provided in the [Installation](#installation) section under "Seed Test Data."
 
 ## **Contributing**
@@ -378,9 +405,9 @@ Contributions must adhere to **PSR-12** for **Laravel** (PHP) and **ESLint** wit
 ## **License**
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
-## **Screenshots** 
+## **Screenshots**
 
-NOTE: All data on these screenshots are dummy data
+> **Note**: All data in these screenshots are dummy data. To add or update screenshots, see [docs/screenshots/README.md](docs/screenshots/README.md).
 
 ### Core Interface
 **Login Screen**
@@ -435,10 +462,25 @@ NOTE: All data on these screenshots are dummy data
 **Reports Analytics**
 <img width="1923" height="1160" alt="image" src="https://github.com/user-attachments/assets/da02a39a-15e3-485e-bad9-46db9770c7da" />
 
+### New Features (2025)
+**Sidebar with User Manual** – User Manual link in the main navigation (below Settings).
+
+![Sidebar with User Manual](docs/screenshots/sidebar-user-manual.png)
+
+**Dashboard with Returnee Widgets** – 30/90-day returns, match rate, matched vs unmatched.
+
+![Dashboard Returnee Widgets](docs/screenshots/dashboard-returnee-widgets.png)
+
+**Returnee Compliance Report** – Period filter and CSV export.
+
+![Returnee Compliance Report](docs/screenshots/reports-returnee-compliance.png)
+
+> *To add these screenshots: run the app, capture the screens, and save as `sidebar-user-manual.png`, `dashboard-returnee-widgets.png`, and `reports-returnee-compliance.png` in `docs/screenshots/`. See [docs/screenshots/README.md](docs/screenshots/README.md) for details.*
+
 ## **Contact**
 For support or inquiries, contact the **Vanuatu Labour Registry** development team:
 - **Email**: htevilili@vanuatu.gov.vu
 
 ---
 
-*Engineered for the **Vanuatu Bureau of Statistics** with **Laravel**, **React JS**, May 2025*
+*Engineered for the **Vanuatu Bureau of Statistics** with **Laravel**, **React**, February 2025*
