@@ -16,16 +16,25 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                         );
                     }
                     
+                    const isExternal = item.href.startsWith('http://') || item.href.startsWith('https://');
                     return (
                         <SidebarMenuItem key={item.title}>
-                            <SidebarMenuButton  
-                                asChild isActive={item.href === page.url}
+                            <SidebarMenuButton
+                                asChild
+                                isActive={!isExternal && item.href === page.url}
                                 tooltip={{ children: item.title }}
                             >
-                                <Link href={item.href} prefetch>
-                                    {item.icon && <item.icon />}
-                                    <span>{item.title}</span>
-                                </Link>
+                                {isExternal ? (
+                                    <a href={item.href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                                        {item.icon && <item.icon />}
+                                        <span>{item.title}</span>
+                                    </a>
+                                ) : (
+                                    <Link href={item.href} prefetch>
+                                        {item.icon && <item.icon />}
+                                        <span>{item.title}</span>
+                                    </Link>
+                                )}
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     );

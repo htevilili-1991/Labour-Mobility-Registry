@@ -1,5 +1,5 @@
 import { NavMain } from '@/components/nav-main';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import { FileIcon, HistoryIcon, LayoutGrid, UploadIcon, PackageIcon, BarChart3, Settings, BookOpen } from 'lucide-react';
@@ -61,6 +61,11 @@ const mainNavItems: NavItem[] = [
         href: '/settings/profile',
         icon: Settings,
     },
+    {
+        title: 'User Manual',
+        href: 'https://htevilili-1991.github.io/lmr-user_manual/',
+        icon: BookOpen,
+    },
 ];
 
 export function AppSidebar() {
@@ -81,19 +86,6 @@ export function AppSidebar() {
             <SidebarContent>
                 <NavMain items={mainNavItems} />
             </SidebarContent>
-
-            <SidebarFooter className="mt-auto">
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton asChild className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100">
-                            <a href="https://htevilili-1991.github.io/lmr-user_manual/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                                <BookOpen className="h-5 w-5 shrink-0" />
-                                <span>User Manual</span>
-                            </a>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarFooter>
         </Sidebar>
     );
 }
