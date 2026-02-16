@@ -9,6 +9,7 @@ format:
     toc-location: left
     number-sections: true
     theme: cosmo
+    embed-resources: true
 ---
 
 ## Introduction {#sec-introduction}
